@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <title>Danh sách sách</title>
+
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background-color: #f4f6f8;
+            color: #111827;
+        }
+
+        .container {
+            width: 78%;
+            margin: 35px auto;
+        }
+
+        .nav {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 18px;
+        }
+
+        .nav a {
+            color: white;
+            padding: 12px 20px;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: bold;
+            font-size: 15px;
+        }
+
+        .nav .home {
+            background-color: #16a34a;
+        }
+
+        .nav .analytics {
+            background-color: #2563eb;
+        }
+
+        .nav .search {
+            background-color: #f97316;
+        }
+
+        h1 {
+            font-size: 30px;
+            margin-bottom: 18px;
+            color: #1f2937;
+        }
+
+        .search-box {
+            background-color: white;
+            padding: 16px;
+            border-radius: 14px;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+            margin-bottom: 18px;
+        }
+
+        .search-title {
+            font-size: 20px;
+            font-weight: bold;
+            color: #1f2937;
+            margin-bottom: 14px;
+        }
+
+        .search-form {
+            display: grid;
+            grid-template-columns: 2fr 1fr 1fr auto;
+            gap: 12px;
+            align-items: end;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 13px;
+            font-weight: bold;
+            margin-bottom: 6px;
+            color: #374151;
+        }
+
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid #d1d5db;
+            border-radius: 8px;
+            outline: none;
+            font-size: 14px;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus {
+            border-color: #2563eb;
+        }
+
+        .btn-search {
+            background-color: #f97316;
+            color: white;
+            border: none;
+            padding: 11px 18px;
+            border-radius: 8px;
+            font-weight: bold;
+            cursor: pointer;
+            height: 40px;
+        }
+
+        .btn-search:hover {
+            background-color: #ea580c;
+        }
+
+        .btn-reset {
+            display: inline-block;
+            margin-top: 10px;
+            color: #2563eb;
+            text-decoration: none;
+            font-weight: bold;
+            font-size: 14px;
+        }
+
+        .table-box {
+            background-color: white;
+            padding: 14px;
+            border-radius: 14px;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+            overflow-x: auto;
+        }
+
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+            color: #374151;
+            font-size: 15px;
+            font-weight: 600;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background-color: white;
+            font-size: 14px;
+        }
+
+        th {
+            background-color: #16a34a;
+            color: white;
+            padding: 13px 10px;
+            border: 1px solid #e5e7eb;
+            text-align: center;
+            white-space: nowrap;
+        }
+
+        td {
+            padding: 11px 10px;
+            border: 1px solid #e5e7eb;
+            vertical-align: middle;
+        }
+
+        tr:nth-child(even) {
+            background-color: #f9fafb;
+        }
+
+        tr:hover {
+            background-color: #eef6ff;
+        }
+
+        .book-link {
+            color: #2563eb;
+            text-decoration: none;
+            font-weight: bold;
+        }
+
+        .book-link:hover {
+            text-decoration: underline;
+        }
+
+        .price {
+            white-space: nowrap;
+        }
+
+        .tag {
+            display: inline-block;
+            background-color: #dcfce7;
+            color: #15803d;
+            padding: 5px 9px;
+            border-radius: 7px;
+            font-size: 13px;
+            margin: 3px 2px;
+            white-space: nowrap;
+        }
+
+        .empty {
+            text-align: center;
+            padding: 25px;
+            color: #6b7280;
+            font-weight: bold;
+        }
+
+        .pagination {
+            margin-top: 24px;
+            text-align: center;
+        }
+
+        .pagination a,
+        .pagination span {
+            display: inline-block;
+            padding: 9px 14px;
+            margin: 3px;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: 600;
+            border: 1px solid #d1d5db;
+            font-size: 14px;
+        }
+
+        .pagination a {
+            color: #2563eb;
+            background-color: white;
+        }
+
+        .pagination a:hover {
+            background-color: #2563eb;
+            color: white;
+        }
+
+        .pagination .active {
+            background-color: #16a34a;
+            color: white;
+            border-color: #16a34a;
+        }
+
+        .pagination .disabled {
+            color: #9ca3af;
+            background-color: #f3f4f6;
+            cursor: not-allowed;
+        }
+
+        @media (max-width: 1200px) {
+            .container {
+                width: 94%;
+            }
+
+            .search-form {
+                grid-template-columns: 1fr;
+            }
+
+            table {
+                font-size: 13px;
+            }
+
+            th,
+            td {
+                padding: 9px 8px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="nav">
+            <a class="home" href="{{ url_for('home') }}">Trang chủ</a>
+            <a class="analytics" href="{{ url_for('analytics') }}">Phân tích dữ liệu</a>
+            <a class="search" href="{{ url_for('books') }}">Tìm kiếm dữ liệu</a>
+        </div>
+
+        <h1>Danh sách sách trong MongoDB</h1>
+
+        <div class="search-box">
+            <div class="search-title">Tìm kiếm dữ liệu sách và bình luận đánh giá</div>
+
+            <form class="search-form" method="GET" action="{{ url_for('books') }}">
+                <div class="form-group">
+                    <label>Từ khóa</label>
+                    <input
+                        type="text"
+                        name="keyword"
+                        value="{{ keyword }}"
+                        placeholder="Nhập tên sách, tác giả, tag hoặc nội dung bình luận..."
+                    >
+                </div>
+
+                <div class="form-group">
+                    <label>Loại tìm kiếm</label>
+                    <select name="search_type">
+                        <option value="all" {% if search_type == "all" %}selected{% endif %}>Tất cả</option>
+                        <option value="title" {% if search_type == "title" %}selected{% endif %}>Tên sách</option>
+                        <option value="author" {% if search_type == "author" %}selected{% endif %}>Tác giả</option>
+                        <option value="tag" {% if search_type == "tag" %}selected{% endif %}>Tag</option>
+                        <option value="review" {% if search_type == "review" %}selected{% endif %}>Bình luận đánh giá</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label>Thể loại</label>
+                    <select name="category">
+                        <option value="">Tất cả</option>
+
+                        {% for cate in categories %}
+                            <option value="{{ cate }}" {% if selected_category == cate %}selected{% endif %}>
+                                {{ cate }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <button class="btn-search" type="submit">Tìm kiếm</button>
+            </form>
+
+            {% if keyword or selected_category %}
+                <a class="btn-reset" href="{{ url_for('books') }}">Xóa bộ lọc / Hiển thị tất cả</a>
+            {% endif %}
+        </div>
+
+        <div class="table-box">
+            <div class="info-row">
+                <div>
+                    Hiển thị {{ start_index }} - {{ end_index }} / {{ total_books }} sách
+                </div>
+
+                <div>
+                    Trang {{ page }} / {{ total_pages }}
+                </div>
+            </div>
+
+            {% if books %}
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Mã sách</th>
+                            <th>Tên sách</th>
+                            <th>Tác giả</th>
+                            <th>Thể loại</th>
+                            <th>Giá</th>
+                            <th>Tags</th>
+                            <th>Số đánh giá</th>
+                        </tr>
+                    </thead>
+
+                    <tbody>
+                        {% for book in books %}
+                        <tr>
+                            <td>{{ book.book_id }}</td>
+
+                            <td>
+                                <a class="book-link" href="{{ url_for('book_detail', book_id=book.book_id) }}">
+                                    {{ book.title }}
+                                </a>
+                            </td>
+
+                            <td>{{ book.author }}</td>
+
+                            <td>{{ book.category }}</td>
+
+                            <td class="price">
+                                {{ "{:,.0f}".format(book.price) }} VNĐ
+                            </td>
+
+                            <td>
+                                {% for tag in book.tags %}
+                                    <span class="tag">{{ tag }}</span>
+                                {% endfor %}
+                            </td>
+
+                            <td>{{ book.reviews|length }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+
+                <div class="pagination">
+                    {% if page > 1 %}
+                        <a href="{{ url_for('books', page=page-1, keyword=keyword, search_type=search_type, category=selected_category) }}">
+                            ← Trước
+                        </a>
+                    {% else %}
+                        <span class="disabled">← Trước</span>
+                    {% endif %}
+
+                    {% for p in range(1, total_pages + 1) %}
+                        {% if p == page %}
+                            <span class="active">{{ p }}</span>
+                        {% else %}
+                            <a href="{{ url_for('books', page=p, keyword=keyword, search_type=search_type, category=selected_category) }}">
+                                {{ p }}
+                            </a>
+                        {% endif %}
+                    {% endfor %}
+
+                    {% if page < total_pages %}
+                        <a href="{{ url_for('books', page=page+1, keyword=keyword, search_type=search_type, category=selected_category) }}">
+                            Sau →
+                        </a>
+                    {% else %}
+                        <span class="disabled">Sau →</span>
+                    {% endif %}
+                </div>
+            {% else %}
+                <div class="empty">
+                    Không tìm thấy sách phù hợp với từ khóa hoặc bộ lọc đã chọn.
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</body>
+</html>
