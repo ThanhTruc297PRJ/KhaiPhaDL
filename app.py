@@ -1,8 +1,9 @@
-from flask import Flask, render_template, request
+from flask import Flask, render_template, request, redirect, url_for
 from pymongo import MongoClient
 from collections import Counter, defaultdict
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
+from datetime import datetime
 import re
 import math
 
@@ -116,6 +117,26 @@ def get_tfidf_recommendations(book_id, limit=5):
     return similar_items[:limit]
 
 
+def generate_next_book_id():
+    books_data = list(books_collection.find({}, {"book_id": 1, "_id": 0}))
+
+    max_number = 0
+
+    for book in books_data:
+        book_id = book.get("book_id", "")
+
+        if book_id.startswith("B"):
+            try:
+                number = int(book_id.replace("B", ""))
+                if number > max_number:
+                    max_number = number
+            except ValueError:
+                pass
+
+    next_number = max_number + 1
+    return f"B{next_number:03d}"
+
+
 @app.route("/")
 def home():
     total_books = books_collection.count_documents({})
@@ -225,8 +246,33 @@ def book_detail(book_id):
     if not book:
         return "Không tìm thấy sách", 404
 
-    reviews = book.get("reviews", [])
-    total_reviews = len(reviews)
+    all_reviews = book.get("reviews", [])
+    total_reviews = len(all_reviews)
+
+    review_keyword = request.args.get("review_keyword", "").strip()
+    rating_filter = request.args.get("rating", "").strip()
+
+    reviews = all_reviews
+
+    if review_keyword:
+        keyword_lower = review_keyword.lower()
+        reviews = [
+            review for review in reviews
+            if keyword_lower in review.get("comment", "").lower()
+            or keyword_lower in review.get("user", "").lower()
+        ]
+
+    if rating_filter:
+        try:
+            rating_number = int(rating_filter)
+            reviews = [
+                review for review in reviews
+                if int(review.get("rating", 0)) == rating_number
+            ]
+        except ValueError:
+            pass
+
+    filtered_review_count = len(reviews)
 
     avg_rating = 0
     sentiment_counter = {
@@ -236,10 +282,10 @@ def book_detail(book_id):
     }
 
     if total_reviews > 0:
-        total_rating = sum(review.get("rating", 0) for review in reviews)
+        total_rating = sum(review.get("rating", 0) for review in all_reviews)
         avg_rating = round(total_rating / total_reviews, 2)
 
-        for review in reviews:
+        for review in all_reviews:
             sentiment = get_sentiment_by_rating(review.get("rating", 0))
             sentiment_counter[sentiment] += 1
 
@@ -250,7 +296,11 @@ def book_detail(book_id):
         "book_detail.html",
         book=book,
         reviews=reviews,
+        all_reviews=all_reviews,
         total_reviews=total_reviews,
+        filtered_review_count=filtered_review_count,
+        review_keyword=review_keyword,
+        rating_filter=rating_filter,
         avg_rating=avg_rating,
         sentiment_counter=sentiment_counter,
         top_keywords=top_keywords,
@@ -260,74 +310,153 @@ def book_detail(book_id):
     )
 
 
-@app.route("/search", methods=["GET"])
-def search():
-    keyword = request.args.get("keyword", "").strip()
-    category = request.args.get("category", "").strip()
-    search_type = request.args.get("search_type", "title")
+@app.route("/add-book", methods=["GET", "POST"])
+def add_book():
+    categories = books_collection.distinct("category")
 
-    query = {}
+    if request.method == "POST":
+        title = request.form.get("title", "").strip()
+        author = request.form.get("author", "").strip()
+        category = request.form.get("category", "").strip()
+        price = request.form.get("price", "").strip()
+        description = request.form.get("description", "").strip()
+        tags_text = request.form.get("tags", "").strip()
 
-    if category:
-        query["category"] = category
+        if not title or not author or not category or not price:
+            return render_template(
+                "add_book.html",
+                categories=categories,
+                error="Vui lòng nhập đầy đủ tên sách, tác giả, thể loại và giá.",
+                form_data=request.form
+            )
 
-    if keyword:
-        regex = {"$regex": keyword, "$options": "i"}
+        try:
+            price = int(price)
+        except ValueError:
+            return render_template(
+                "add_book.html",
+                categories=categories,
+                error="Giá sách phải là số.",
+                form_data=request.form
+            )
 
-        if search_type == "title":
-            query["title"] = regex
+        tags = []
+        if tags_text:
+            tags = [tag.strip() for tag in tags_text.split(",") if tag.strip()]
 
-        elif search_type == "review":
-            query["reviews.comment"] = regex
+        new_book = {
+            "book_id": generate_next_book_id(),
+            "title": title,
+            "author": author,
+            "category": category,
+            "price": price,
+            "description": description,
+            "tags": tags,
+            "reviews": [],
+            "created_at": datetime.now().strftime("%d/%m/%Y")
+        }
 
-        elif search_type == "tag":
-            query["tags"] = regex
+        books_collection.insert_one(new_book)
 
-        else:
-            query["$or"] = [
-                {"book_id": regex},
-                {"title": regex},
-                {"author": regex},
-                {"category": regex},
-                {"description": regex},
-                {"tags": regex},
-                {"reviews.comment": regex}
-            ]
+        return redirect(url_for("books"))
 
-    results = list(books_collection.find(query, {"_id": 0}))
+    return render_template(
+        "add_book.html",
+        categories=categories,
+        error=None,
+        form_data={}
+    )
 
-    # SỬA LỖI:
-    # Nếu tìm theo bình luận đánh giá thì chỉ hiển thị các bình luận có chứa từ khóa.
-    # Trước đó MongoDB lọc đúng sách, nhưng giao diện lại hiện 3 bình luận đầu tiên
-    # nên nhìn giống như tìm kiếm bị sai.
-    if keyword and search_type == "review":
-        keyword_lower = keyword.lower()
 
-        for book in results:
-            matched_reviews = []
+@app.route("/edit-book/<book_id>", methods=["GET", "POST"])
+def edit_book(book_id):
+    book = books_collection.find_one({"book_id": book_id}, {"_id": 0})
 
-            for review in book.get("reviews", []):
-                comment = review.get("comment", "")
-
-                if keyword_lower in comment.lower():
-                    matched_reviews.append(review)
-
-            book["display_reviews"] = matched_reviews
-
-    else:
-        for book in results:
-            book["display_reviews"] = book.get("reviews", [])[:3]
+    if not book:
+        return "Không tìm thấy sách", 404
 
     categories = books_collection.distinct("category")
 
+    if request.method == "POST":
+        title = request.form.get("title", "").strip()
+        author = request.form.get("author", "").strip()
+        category = request.form.get("category", "").strip()
+        price = request.form.get("price", "").strip()
+        description = request.form.get("description", "").strip()
+        tags_text = request.form.get("tags", "").strip()
+
+        if not title or not author or not category or not price:
+            return render_template(
+                "edit_book.html",
+                book=book,
+                categories=categories,
+                error="Vui lòng nhập đầy đủ tên sách, tác giả, thể loại và giá.",
+                form_data=request.form
+            )
+
+        try:
+            price = int(price)
+        except ValueError:
+            return render_template(
+                "edit_book.html",
+                book=book,
+                categories=categories,
+                error="Giá sách phải là số.",
+                form_data=request.form
+            )
+
+        tags = []
+        if tags_text:
+            tags = [tag.strip() for tag in tags_text.split(",") if tag.strip()]
+
+        books_collection.update_one(
+            {"book_id": book_id},
+            {
+                "$set": {
+                    "title": title,
+                    "author": author,
+                    "category": category,
+                    "price": price,
+                    "description": description,
+                    "tags": tags
+                }
+            }
+        )
+
+        return redirect(url_for("books"))
+
+    form_data = {
+        "title": book.get("title", ""),
+        "author": book.get("author", ""),
+        "category": book.get("category", ""),
+        "price": book.get("price", ""),
+        "tags": ", ".join(book.get("tags", [])),
+        "description": book.get("description", "")
+    }
+
     return render_template(
-        "search.html",
-        results=results,
+        "edit_book.html",
+        book=book,
         categories=categories,
-        keyword=keyword,
-        selected_category=category,
-        search_type=search_type
+        error=None,
+        form_data=form_data
     )
+
+
+@app.route("/delete-book/<book_id>", methods=["POST"])
+def delete_book(book_id):
+    books_collection.delete_one({"book_id": book_id})
+    return redirect(url_for("books"))
+
+
+@app.route("/search", methods=["GET"])
+def search():
+    return redirect(url_for(
+        "books",
+        keyword=request.args.get("keyword", ""),
+        search_type=request.args.get("search_type", "all"),
+        category=request.args.get("category", "")
+    ))
 
 
 @app.route("/analytics")

@@ -4,521 +4,467 @@
     <meta charset="UTF-8">
     <title>Chi tiết sách</title>
 
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
     <style>
+        * {
+            box-sizing: border-box;
+        }
+
         body {
+            margin: 0;
             font-family: Arial, sans-serif;
-            background: #f4f6f8;
-            padding: 18px;
-            font-size: 14px;
+            background-color: #f4f6f8;
+            color: #111827;
         }
 
         .container {
-            max-width: 1100px;
-            margin: auto;
+            width: 88%;
+            margin: 25px auto;
         }
 
         .nav {
-            margin-bottom: 14px;
+            display: flex;
+            gap: 10px;
+            margin-bottom: 18px;
+            align-items: center;
+            flex-wrap: wrap;
         }
 
         .nav a {
-            display: inline-block;
-            margin-right: 8px;
-            background: #16a34a;
             color: white;
+            padding: 10px 18px;
+            border-radius: 8px;
             text-decoration: none;
-            padding: 8px 12px;
-            border-radius: 7px;
             font-weight: bold;
-            font-size: 13px;
+            font-size: 14px;
         }
 
-        .nav a:hover {
-            background: #15803d;
+        .nav .home {
+            background-color: #16a34a;
         }
 
-        .nav .blue {
-            background: #2563eb;
+        .nav .books {
+            background-color: #2563eb;
         }
 
-        .nav .blue:hover {
-            background: #1d4ed8;
-        }
-
-        .nav .orange {
-            background: #f97316;
-        }
-
-        .nav .orange:hover {
-            background: #ea580c;
+        .nav .analytics {
+            background-color: #111827;
         }
 
         h1 {
+            font-size: 28px;
+            margin-bottom: 18px;
             color: #1f2937;
-            font-size: 26px;
-            margin-bottom: 14px;
-        }
-
-        h2 {
-            font-size: 20px;
-            color: #1f2937;
-            margin-bottom: 10px;
         }
 
         .card {
-            background: white;
-            padding: 16px;
-            border-radius: 12px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-            margin-bottom: 16px;
+            background-color: white;
+            padding: 18px;
+            border-radius: 14px;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+            margin-bottom: 18px;
         }
 
-        .meta {
-            line-height: 1.7;
+        .book-title {
+            font-size: 25px;
+            font-weight: bold;
+            color: #2563eb;
+            margin-bottom: 12px;
+        }
+
+        .book-meta {
+            line-height: 1.8;
+            font-size: 15px;
             color: #374151;
         }
 
-        .tag {
-            background: #dcfce7;
-            color: #166534;
-            padding: 4px 8px;
-            border-radius: 6px;
-            display: inline-block;
-            margin: 3px;
-            font-size: 12px;
-            font-weight: bold;
+        .book-meta strong {
+            color: #111827;
         }
 
-        .keyword {
-            background: #e0f2fe;
-            color: #075985;
-            padding: 5px 9px;
-            border-radius: 16px;
+        .description {
+            margin-top: 12px;
+            padding: 12px;
+            background-color: #f9fafb;
+            border-radius: 10px;
+            line-height: 1.6;
+        }
+
+        .tag {
             display: inline-block;
-            margin: 4px;
-            font-size: 12px;
-            font-weight: bold;
+            background-color: #dcfce7;
+            color: #15803d;
+            padding: 5px 9px;
+            border-radius: 7px;
+            font-size: 13px;
+            margin: 4px 3px 0 0;
         }
 
         .stats {
             display: grid;
-            grid-template-columns: repeat(5, 1fr);
-            gap: 12px;
-            margin-bottom: 16px;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 14px;
+            margin-bottom: 18px;
         }
 
         .stat-box {
-            background: white;
-            padding: 14px;
-            border-radius: 12px;
+            background-color: white;
+            padding: 16px;
+            border-radius: 14px;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
             text-align: center;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
         }
 
-        .stat-box h2 {
-            margin: 0;
-            color: #15803d;
+        .stat-number {
             font-size: 24px;
-        }
-
-        .stat-box p {
-            margin: 5px 0 0;
-            color: #374151;
-            font-size: 13px;
-        }
-
-        .positive h2 {
-            color: #16a34a;
-        }
-
-        .neutral h2 {
-            color: #f59e0b;
-        }
-
-        .negative h2 {
-            color: #dc2626;
-        }
-
-        .two-column {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 16px;
-        }
-
-        .chart-box {
-            height: 230px;
-            position: relative;
-        }
-
-        canvas {
-            width: 100% !important;
-            height: 100% !important;
-        }
-
-        .recommend-grid {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 10px;
-        }
-
-        .recommend-item {
-            background: #f9fafb;
-            padding: 12px;
-            border-radius: 8px;
-            border-left: 4px solid #2563eb;
-        }
-
-        .recommend-item a {
+            font-weight: bold;
             color: #2563eb;
+            margin-bottom: 6px;
+        }
+
+        .stat-label {
+            color: #4b5563;
+            font-weight: bold;
+            font-size: 14px;
+        }
+
+        .section-title {
+            font-size: 21px;
+            font-weight: bold;
+            color: #1f2937;
+            margin-bottom: 14px;
+        }
+
+        .keyword-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .keyword {
+            background-color: #eff6ff;
+            color: #1d4ed8;
+            padding: 7px 10px;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: bold;
+        }
+
+        .search-review-box {
+            background-color: white;
+            padding: 16px;
+            border-radius: 14px;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+            margin-bottom: 18px;
+        }
+
+        .search-form {
+            display: grid;
+            grid-template-columns: 2fr 1fr auto auto;
+            gap: 10px;
+            align-items: end;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 13px;
+            font-weight: bold;
+            margin-bottom: 6px;
+            color: #374151;
+        }
+
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid #d1d5db;
+            border-radius: 8px;
+            outline: none;
+            font-size: 14px;
+        }
+
+        .btn-search {
+            background-color: #f97316;
+            color: white;
+            border: none;
+            padding: 10px 18px;
+            border-radius: 8px;
+            font-weight: bold;
+            cursor: pointer;
+            height: 40px;
+        }
+
+        .btn-search:hover {
+            background-color: #ea580c;
+        }
+
+        .btn-reset {
+            display: inline-block;
+            background-color: #6b7280;
+            color: white;
+            padding: 11px 18px;
+            border-radius: 8px;
             text-decoration: none;
             font-weight: bold;
+            font-size: 14px;
+            height: 40px;
         }
 
-        .recommend-item a:hover {
-            text-decoration: underline;
-        }
-
-        .score {
-            color: #16a34a;
-            font-weight: bold;
-            margin-top: 5px;
-        }
-
-        .method-box {
-            background: #fefce8;
-            border-left: 4px solid #eab308;
-            padding: 12px;
-            border-radius: 8px;
-            line-height: 1.6;
-            margin-bottom: 12px;
-        }
-
-        .review-summary {
-            background: #f9fafb;
-            border-left: 4px solid #16a34a;
-            padding: 12px;
-            border-radius: 8px;
-            margin-bottom: 14px;
-            color: #374151;
-            line-height: 1.6;
-        }
-
-        .review-table {
-            width: 100%;
-            border-collapse: collapse;
-            background: white;
-            font-size: 13px;
-        }
-
-        .review-table th {
-            background: #16a34a;
-            color: white;
-            padding: 10px;
+        .review-item {
+            background-color: #f9fafb;
             border: 1px solid #e5e7eb;
-            text-align: center;
-            white-space: nowrap;
+            border-radius: 10px;
+            padding: 13px;
+            margin-bottom: 10px;
         }
 
-        .review-table td {
-            padding: 10px;
-            border: 1px solid #e5e7eb;
-            vertical-align: top;
-            color: #374151;
-        }
-
-        .review-table tr:nth-child(even) {
-            background: #f9fafb;
-        }
-
-        .review-table tr:hover {
-            background: #eef6ff;
+        .review-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+            gap: 10px;
+            flex-wrap: wrap;
         }
 
         .review-user {
             font-weight: bold;
-            color: #1f2937;
-            white-space: nowrap;
+            color: #111827;
         }
 
         .rating {
-            color: #ca8a04;
+            color: #d97706;
             font-weight: bold;
-            white-space: nowrap;
         }
 
         .comment {
-            line-height: 1.5;
-        }
-
-        .review-date {
-            color: #6b7280;
-            white-space: nowrap;
-        }
-
-        .sentiment {
-            display: inline-block;
-            padding: 4px 8px;
-            border-radius: 6px;
-            font-size: 12px;
-            font-weight: bold;
-            white-space: nowrap;
-        }
-
-        .sentiment-positive {
-            background: #dcfce7;
-            color: #166534;
-        }
-
-        .sentiment-neutral {
-            background: #fef3c7;
-            color: #92400e;
-        }
-
-        .sentiment-negative {
-            background: #fee2e2;
-            color: #991b1b;
+            line-height: 1.6;
+            color: #374151;
         }
 
         .empty {
             text-align: center;
-            padding: 24px;
             color: #6b7280;
             font-weight: bold;
-            background: #f9fafb;
-            border-radius: 8px;
+            padding: 22px;
+            background-color: #f9fafb;
+            border-radius: 10px;
         }
 
-        @media (max-width: 900px) {
+        .recommend-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 12px;
+        }
+
+        .recommend-card {
+            background-color: #f9fafb;
+            border: 1px solid #e5e7eb;
+            border-radius: 10px;
+            padding: 12px;
+        }
+
+        .recommend-card a {
+            color: #2563eb;
+            text-decoration: none;
+            font-weight: bold;
+            line-height: 1.4;
+        }
+
+        .recommend-card a:hover {
+            text-decoration: underline;
+        }
+
+        .recommend-meta {
+            margin-top: 8px;
+            color: #4b5563;
+            font-size: 13px;
+            line-height: 1.5;
+        }
+
+        @media (max-width: 1100px) {
+            .container {
+                width: 94%;
+            }
+
             .stats {
                 grid-template-columns: repeat(2, 1fr);
             }
 
-            .two-column {
+            .search-form {
                 grid-template-columns: 1fr;
             }
 
             .recommend-grid {
                 grid-template-columns: 1fr;
             }
-
-            .review-table {
-                font-size: 12px;
-            }
-
-            .review-table th,
-            .review-table td {
-                padding: 8px;
-            }
         }
     </style>
 </head>
 
 <body>
-
-<div class="container">
-
-    <div class="nav">
-        <a href="/">Trang chủ</a>
-        <a href="/books">Danh sách sách</a>
-        <a class="blue" href="/analytics">Phân tích dữ liệu</a>
-        <a class="orange" href="/search">Tìm kiếm dữ liệu</a>
-    </div>
-
-    <h1>Chi tiết sách</h1>
-
-    <div class="card">
-        <h2>{{ book.book_id }} - {{ book.title }}</h2>
-
-        <div class="meta">
-            <b>Tác giả:</b> {{ book.author }} <br>
-            <b>Thể loại:</b> {{ book.category }} <br>
-            <b>Giá:</b> {{ "{:,.0f}".format(book.price) }} VNĐ <br>
-            <b>Mô tả:</b> {{ book.description }}
+    <div class="container">
+        <div class="nav">
+            <a class="home" href="{{ url_for('home') }}">Trang chủ</a>
+            <a class="books" href="{{ url_for('books') }}">Danh sách sách</a>
+            <a class="analytics" href="{{ url_for('analytics') }}">Phân tích dữ liệu</a>
         </div>
 
-        <br>
+        <h1>Chi tiết sách</h1>
 
-        <div>
-            <b>Tags:</b>
-            {% for tag in book.tags %}
-                <span class="tag">{{ tag }}</span>
-            {% endfor %}
-        </div>
-    </div>
-
-    <div class="stats">
-        <div class="stat-box">
-            <h2>{{ total_reviews }}</h2>
-            <p>Tổng đánh giá</p>
-        </div>
-
-        <div class="stat-box">
-            <h2>{{ avg_rating }}</h2>
-            <p>Rating trung bình</p>
-        </div>
-
-        <div class="stat-box positive">
-            <h2>{{ sentiment_counter["Tích cực"] }}</h2>
-            <p>Tích cực</p>
-        </div>
-
-        <div class="stat-box neutral">
-            <h2>{{ sentiment_counter["Trung lập"] }}</h2>
-            <p>Trung lập</p>
-        </div>
-
-        <div class="stat-box negative">
-            <h2>{{ sentiment_counter["Tiêu cực"] }}</h2>
-            <p>Tiêu cực</p>
-        </div>
-    </div>
-
-    <div class="two-column">
         <div class="card">
-            <h2>Biểu đồ cảm xúc của sách</h2>
+            <div class="book-title">
+                {{ book.book_id }} - {{ book.title }}
+            </div>
 
-            <div class="chart-box">
-                <canvas id="bookSentimentChart"></canvas>
+            <div class="book-meta">
+                <div><strong>Tác giả:</strong> {{ book.author }}</div>
+                <div><strong>Thể loại:</strong> {{ book.category }}</div>
+                <div><strong>Giá:</strong> {{ "{:,.0f}".format(book.price) }} VNĐ</div>
+                <div><strong>Số đánh giá:</strong> {{ total_reviews }}</div>
+                <div>
+                    <strong>Tags:</strong>
+                    {% for tag in book.tags %}
+                        <span class="tag">{{ tag }}</span>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <div class="description">
+                <strong>Mô tả:</strong>
+                {{ book.description }}
+            </div>
+        </div>
+
+        <div class="stats">
+            <div class="stat-box">
+                <div class="stat-number">{{ avg_rating }}</div>
+                <div class="stat-label">Điểm trung bình</div>
+            </div>
+
+            <div class="stat-box">
+                <div class="stat-number">{{ sentiment_counter["Tích cực"] }}</div>
+                <div class="stat-label">Tích cực</div>
+            </div>
+
+            <div class="stat-box">
+                <div class="stat-number">{{ sentiment_counter["Trung lập"] }}</div>
+                <div class="stat-label">Trung lập</div>
+            </div>
+
+            <div class="stat-box">
+                <div class="stat-number">{{ sentiment_counter["Tiêu cực"] }}</div>
+                <div class="stat-label">Tiêu cực</div>
             </div>
         </div>
 
         <div class="card">
-            <h2>Từ khóa nổi bật của sách</h2>
+            <div class="section-title">Từ khóa nổi bật</div>
 
             {% if top_keywords %}
-                {% for word, count in top_keywords %}
-                    <span class="keyword">{{ word }}: {{ count }}</span>
-                {% endfor %}
+                <div class="keyword-list">
+                    {% for word, count in top_keywords %}
+                        <span class="keyword">{{ word }} ({{ count }})</span>
+                    {% endfor %}
+                </div>
             {% else %}
                 <div class="empty">Chưa có từ khóa nổi bật.</div>
             {% endif %}
         </div>
-    </div>
 
-    <div class="card">
-        <h2>Gợi ý sách bằng TF-IDF + Cosine Similarity</h2>
+        <div class="search-review-box">
+            <div class="section-title">Tìm kiếm bình luận đánh giá</div>
 
-        <div class="method-box">
-            Hệ thống ghép dữ liệu <b>tên sách + thể loại + mô tả + tags + bình luận</b>,
-            sau đó chuyển văn bản thành vector bằng <b>TF-IDF</b> và tính độ tương đồng bằng
-            <b>Cosine Similarity</b>. Các sách có điểm tương đồng cao nhất sẽ được đề xuất.
+            <form class="search-form" method="GET" action="{{ url_for('book_detail', book_id=book.book_id) }}">
+                <div class="form-group">
+                    <label>Từ khóa bình luận</label>
+                    <input
+                        type="text"
+                        name="review_keyword"
+                        value="{{ review_keyword }}"
+                        placeholder="Nhập từ khóa: hay, khó hiểu, thiếu ví dụ..."
+                    >
+                </div>
+
+                <div class="form-group">
+                    <label>Lọc theo số sao</label>
+                    <select name="rating">
+                        <option value="" {% if rating_filter == "" %}selected{% endif %}>Tất cả</option>
+                        <option value="5" {% if rating_filter == "5" %}selected{% endif %}>5 sao</option>
+                        <option value="4" {% if rating_filter == "4" %}selected{% endif %}>4 sao</option>
+                        <option value="3" {% if rating_filter == "3" %}selected{% endif %}>3 sao</option>
+                        <option value="2" {% if rating_filter == "2" %}selected{% endif %}>2 sao</option>
+                        <option value="1" {% if rating_filter == "1" %}selected{% endif %}>1 sao</option>
+                    </select>
+                </div>
+
+                <button class="btn-search" type="submit">Tìm kiếm</button>
+
+                <a class="btn-reset" href="{{ url_for('book_detail', book_id=book.book_id) }}">
+                    Xóa lọc
+                </a>
+            </form>
         </div>
 
-        {% if recommended_books %}
-            <div class="recommend-grid">
-                {% for item in recommended_books %}
-                    <div class="recommend-item">
-                        <a href="/book/{{ item.book_id }}">{{ item.book_id }} - {{ item.title }}</a>
-                        <div><b>Thể loại:</b> {{ item.category }}</div>
-                        <div><b>Giá:</b> {{ "{:,.0f}".format(item.price) }} VNĐ</div>
-                        <div class="score">Độ tương đồng: {{ item.similarity_percent }}%</div>
+        <div class="card">
+            <div class="section-title">
+                Danh sách bình luận đánh giá
+                {% if review_keyword or rating_filter %}
+                    - Kết quả lọc: {{ filtered_review_count }} / {{ total_reviews }}
+                {% else %}
+                    - Tổng: {{ total_reviews }}
+                {% endif %}
+            </div>
+
+            {% if reviews %}
+                {% for review in reviews %}
+                    <div class="review-item">
+                        <div class="review-header">
+                            <div class="review-user">
+                                {{ review.user }}
+                            </div>
+
+                            <div class="rating">
+                                Rating {{ review.rating }}/5
+                            </div>
+                        </div>
+
+                        <div class="comment">
+                            {{ review.comment }}
+                        </div>
                     </div>
                 {% endfor %}
-            </div>
-        {% else %}
-            <div class="empty">Chưa có sách gợi ý.</div>
-        {% endif %}
-    </div>
-
-    <div class="card">
-        <h2>Danh sách bình luận đánh giá</h2>
-
-        <div class="review-summary">
-            Sách <b>{{ book.title }}</b> có tổng cộng <b>{{ total_reviews }}</b> đánh giá,
-            rating trung bình là <b>{{ avg_rating }}/5</b>.
-            Bảng bên dưới hiển thị chi tiết từng đánh giá của người đọc.
+            {% else %}
+                <div class="empty">
+                    Không tìm thấy bình luận phù hợp.
+                </div>
+            {% endif %}
         </div>
 
-        {% if reviews %}
-            <table class="review-table">
-                <thead>
-                    <tr>
-                        <th>STT</th>
-                        <th>Người đánh giá</th>
-                        <th>Rating</th>
-                        <th>Nội dung bình luận</th>
-                        <th>Cảm xúc</th>
-                        <th>Ngày đánh giá</th>
-                    </tr>
-                </thead>
+        <div class="card">
+            <div class="section-title">Gợi ý sách tương tự bằng TF-IDF</div>
 
-                <tbody>
-                    {% for review in reviews %}
-                        {% set rating = review.get("rating", 0) %}
-                        {% set sentiment = "Tích cực" if rating >= 4 else ("Trung lập" if rating == 3 else "Tiêu cực") %}
+            {% if recommended_books %}
+                <div class="recommend-grid">
+                    {% for item in recommended_books %}
+                        <div class="recommend-card">
+                            <a href="{{ url_for('book_detail', book_id=item.book_id) }}">
+                                {{ item.title }}
+                            </a>
 
-                        <tr>
-                            <td style="text-align: center;">{{ loop.index }}</td>
-
-                            <td class="review-user">
-                                {{ review.get("user", review.get("username", review.get("name", "Khách hàng"))) }}
-                            </td>
-
-                            <td class="rating">
-                                {{ rating }}/5 ⭐
-                            </td>
-
-                            <td class="comment">
-                                {{ review.get("comment", "Không có nội dung bình luận") }}
-                            </td>
-
-                            <td style="text-align: center;">
-                                {% if sentiment == "Tích cực" %}
-                                    <span class="sentiment sentiment-positive">{{ sentiment }}</span>
-                                {% elif sentiment == "Trung lập" %}
-                                    <span class="sentiment sentiment-neutral">{{ sentiment }}</span>
-                                {% else %}
-                                    <span class="sentiment sentiment-negative">{{ sentiment }}</span>
-                                {% endif %}
-                            </td>
-
-                            <td class="review-date">
-                                {{ review.get("created_at", "Không có ngày") }}
-                            </td>
-                        </tr>
+                            <div class="recommend-meta">
+                                <div><strong>Mã:</strong> {{ item.book_id }}</div>
+                                <div><strong>Thể loại:</strong> {{ item.category }}</div>
+                                <div><strong>Độ tương đồng:</strong> {{ item.similarity_percent }}%</div>
+                            </div>
+                        </div>
                     {% endfor %}
-                </tbody>
-            </table>
-        {% else %}
-            <div class="empty">
-                Sách này chưa có bình luận đánh giá nào.
-            </div>
-        {% endif %}
+                </div>
+            {% else %}
+                <div class="empty">
+                    Chưa có gợi ý sách tương tự.
+                </div>
+            {% endif %}
+        </div>
     </div>
-
-</div>
-
-<script>
-    const sentimentLabels = {{ sentiment_labels | tojson }};
-    const sentimentValues = {{ sentiment_values | tojson }};
-
-    new Chart(document.getElementById("bookSentimentChart"), {
-        type: "doughnut",
-        data: {
-            labels: sentimentLabels,
-            datasets: [{
-                label: "Số lượng đánh giá",
-                data: sentimentValues,
-                backgroundColor: ["#16a34a", "#f59e0b", "#dc2626"]
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-                legend: {
-                    labels: {
-                        font: {
-                            size: 12
-                        }
-                    }
-                }
-            }
-        }
-    });
-</script>
-
 </body>
 </html>

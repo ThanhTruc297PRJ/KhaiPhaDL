@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <title>Thêm sách mới</title>
+
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background-color: #f4f6f8;
+            color: #111827;
+        }
+
+        .container {
+            width: 70%;
+            margin: 30px auto;
+        }
+
+        .nav {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 18px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .nav a {
+            color: white;
+            padding: 10px 18px;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: bold;
+            font-size: 14px;
+        }
+
+        .nav .home {
+            background-color: #16a34a;
+        }
+
+        .nav .books {
+            background-color: #2563eb;
+        }
+
+        .nav .analytics {
+            background-color: #111827;
+        }
+
+        h1 {
+            font-size: 28px;
+            margin-bottom: 18px;
+            color: #1f2937;
+        }
+
+        .form-box {
+            background-color: white;
+            padding: 22px;
+            border-radius: 14px;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+        }
+
+        .form-title {
+            font-size: 20px;
+            font-weight: bold;
+            margin-bottom: 18px;
+            color: #1f2937;
+        }
+
+        .error {
+            background-color: #fee2e2;
+            color: #b91c1c;
+            padding: 12px;
+            border-radius: 8px;
+            font-weight: bold;
+            margin-bottom: 16px;
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+        }
+
+        .form-group {
+            margin-bottom: 14px;
+        }
+
+        .form-group.full {
+            grid-column: 1 / 3;
+        }
+
+        label {
+            display: block;
+            font-size: 14px;
+            font-weight: bold;
+            margin-bottom: 7px;
+            color: #374151;
+        }
+
+        input,
+        textarea {
+            width: 100%;
+            padding: 11px 12px;
+            border: 1px solid #d1d5db;
+            border-radius: 8px;
+            outline: none;
+            font-size: 14px;
+            font-family: Arial, sans-serif;
+        }
+
+        input:focus,
+        textarea:focus {
+            border-color: #2563eb;
+        }
+
+        textarea {
+            min-height: 110px;
+            resize: vertical;
+        }
+
+        .note {
+            font-size: 13px;
+            color: #6b7280;
+            margin-top: 5px;
+        }
+
+        .actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .btn-save {
+            background-color: #16a34a;
+            color: white;
+            border: none;
+            padding: 11px 20px;
+            border-radius: 8px;
+            font-weight: bold;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        .btn-save:hover {
+            background-color: #15803d;
+        }
+
+        .btn-cancel {
+            display: inline-block;
+            background-color: #6b7280;
+            color: white;
+            padding: 11px 20px;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: bold;
+            font-size: 14px;
+        }
+
+        .btn-cancel:hover {
+            background-color: #4b5563;
+        }
+
+        @media (max-width: 900px) {
+            .container {
+                width: 94%;
+            }
+
+            .form-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .form-group.full {
+                grid-column: 1 / 2;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="nav">
+            <a class="home" href="{{ url_for('home') }}">Trang chủ</a>
+            <a class="books" href="{{ url_for('books') }}">Danh sách sách</a>
+            <a class="analytics" href="{{ url_for('analytics') }}">Phân tích dữ liệu</a>
+        </div>
+
+        <h1>Thêm sách mới</h1>
+
+        <div class="form-box">
+            <div class="form-title">Nhập thông tin sách</div>
+
+            {% if error %}
+                <div class="error">{{ error }}</div>
+            {% endif %}
+
+            <form method="POST" action="{{ url_for('add_book') }}">
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>Tên sách</label>
+                        <input
+                            type="text"
+                            name="title"
+                            placeholder="Nhập tên sách"
+                            value="{{ form_data.get('title', '') }}"
+                            required
+                        >
+                    </div>
+
+                    <div class="form-group">
+                        <label>Tác giả</label>
+                        <input
+                            type="text"
+                            name="author"
+                            placeholder="Nhập tên tác giả"
+                            value="{{ form_data.get('author', '') }}"
+                            required
+                        >
+                    </div>
+
+                    <div class="form-group">
+                        <label>Thể loại</label>
+                        <input
+                            type="text"
+                            name="category"
+                            list="category-list"
+                            placeholder="Nhập hoặc chọn thể loại"
+                            value="{{ form_data.get('category', '') }}"
+                            required
+                        >
+
+                        <datalist id="category-list">
+                            {% for cate in categories %}
+                                <option value="{{ cate }}">
+                            {% endfor %}
+                        </datalist>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Giá</label>
+                        <input
+                            type="number"
+                            name="price"
+                            placeholder="Ví dụ: 175000"
+                            min="0"
+                            value="{{ form_data.get('price', '') }}"
+                            required
+                        >
+                    </div>
+
+                    <div class="form-group full">
+                        <label>Tags</label>
+                        <input
+                            type="text"
+                            name="tags"
+                            placeholder="Ví dụ: công nghệ, lập trình, python"
+                            value="{{ form_data.get('tags', '') }}"
+                        >
+                        <div class="note">Mỗi tag cách nhau bằng dấu phẩy.</div>
+                    </div>
+
+                    <div class="form-group full">
+                        <label>Mô tả</label>
+                        <textarea name="description" placeholder="Nhập mô tả ngắn về sách">{{ form_data.get('description', '') }}</textarea>
+                    </div>
+                </div>
+
+                <div class="actions">
+                    <button class="btn-save" type="submit">Lưu sách</button>
+                    <a class="btn-cancel" href="{{ url_for('books') }}">Hủy</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</body>
+</html>

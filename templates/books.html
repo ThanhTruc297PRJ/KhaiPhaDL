@@ -17,23 +17,25 @@
         }
 
         .container {
-            width: 78%;
-            margin: 35px auto;
+            width: 92%;
+            margin: 20px auto;
         }
 
         .nav {
             display: flex;
-            gap: 12px;
-            margin-bottom: 18px;
+            gap: 10px;
+            margin-bottom: 16px;
+            align-items: center;
+            flex-wrap: wrap;
         }
 
         .nav a {
             color: white;
-            padding: 12px 20px;
+            padding: 10px 18px;
             border-radius: 8px;
             text-decoration: none;
             font-weight: bold;
-            font-size: 15px;
+            font-size: 14px;
         }
 
         .nav .home {
@@ -44,54 +46,54 @@
             background-color: #2563eb;
         }
 
-        .nav .search {
-            background-color: #f97316;
+        .nav .add {
+            background-color: #111827;
         }
 
         h1 {
-            font-size: 30px;
-            margin-bottom: 18px;
+            font-size: 26px;
+            margin-bottom: 14px;
             color: #1f2937;
         }
 
         .search-box {
             background-color: white;
-            padding: 16px;
-            border-radius: 14px;
-            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
-            margin-bottom: 18px;
+            padding: 14px;
+            border-radius: 12px;
+            box-shadow: 0 3px 12px rgba(0, 0, 0, 0.07);
+            margin-bottom: 16px;
         }
 
         .search-title {
-            font-size: 20px;
+            font-size: 18px;
             font-weight: bold;
             color: #1f2937;
-            margin-bottom: 14px;
+            margin-bottom: 12px;
         }
 
         .search-form {
             display: grid;
             grid-template-columns: 2fr 1fr 1fr auto;
-            gap: 12px;
+            gap: 10px;
             align-items: end;
         }
 
         .form-group label {
             display: block;
-            font-size: 13px;
+            font-size: 12px;
             font-weight: bold;
-            margin-bottom: 6px;
+            margin-bottom: 5px;
             color: #374151;
         }
 
         .form-group input,
         .form-group select {
             width: 100%;
-            padding: 10px 12px;
+            padding: 9px 11px;
             border: 1px solid #d1d5db;
             border-radius: 8px;
             outline: none;
-            font-size: 14px;
+            font-size: 13px;
         }
 
         .form-group input:focus,
@@ -103,11 +105,12 @@
             background-color: #f97316;
             color: white;
             border: none;
-            padding: 11px 18px;
+            padding: 9px 16px;
             border-radius: 8px;
             font-weight: bold;
             cursor: pointer;
-            height: 40px;
+            height: 37px;
+            font-size: 13px;
         }
 
         .btn-search:hover {
@@ -116,18 +119,18 @@
 
         .btn-reset {
             display: inline-block;
-            margin-top: 10px;
+            margin-top: 9px;
             color: #2563eb;
             text-decoration: none;
             font-weight: bold;
-            font-size: 14px;
+            font-size: 13px;
         }
 
         .table-box {
             background-color: white;
-            padding: 14px;
-            border-radius: 14px;
-            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+            padding: 12px;
+            border-radius: 12px;
+            box-shadow: 0 3px 12px rgba(0, 0, 0, 0.07);
             overflow-x: auto;
         }
 
@@ -135,30 +138,33 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 12px;
+            margin-bottom: 10px;
             color: #374151;
-            font-size: 15px;
+            font-size: 14px;
             font-weight: 600;
+            gap: 10px;
+            flex-wrap: wrap;
         }
 
         table {
             width: 100%;
+            min-width: 1050px;
             border-collapse: collapse;
             background-color: white;
-            font-size: 14px;
+            font-size: 13px;
         }
 
         th {
             background-color: #16a34a;
             color: white;
-            padding: 13px 10px;
+            padding: 10px 8px;
             border: 1px solid #e5e7eb;
             text-align: center;
             white-space: nowrap;
         }
 
         td {
-            padding: 11px 10px;
+            padding: 8px 8px;
             border: 1px solid #e5e7eb;
             vertical-align: middle;
         }
@@ -171,6 +177,43 @@
             background-color: #eef6ff;
         }
 
+        .col-id {
+            width: 75px;
+            text-align: center;
+        }
+
+        .col-title {
+            width: 245px;
+        }
+
+        .col-author {
+            width: 130px;
+        }
+
+        .col-category {
+            width: 135px;
+        }
+
+        .col-price {
+            width: 110px;
+        }
+
+        .col-tags {
+            width: 310px;
+        }
+
+        .col-review {
+            width: 90px;
+        }
+
+        .col-date {
+            width: 105px;
+        }
+
+        .col-action {
+            width: 125px;
+        }
+
         .book-link {
             color: #2563eb;
             text-decoration: none;
@@ -181,43 +224,95 @@
             text-decoration: underline;
         }
 
-        .price {
+        .price,
+        .date-cell,
+        .review-count {
             white-space: nowrap;
+            text-align: center;
+        }
+
+        .review-count {
+            font-weight: bold;
         }
 
         .tag {
             display: inline-block;
             background-color: #dcfce7;
             color: #15803d;
-            padding: 5px 9px;
-            border-radius: 7px;
-            font-size: 13px;
-            margin: 3px 2px;
+            padding: 4px 7px;
+            border-radius: 6px;
+            font-size: 12px;
+            margin: 2px 1px;
             white-space: nowrap;
+        }
+
+        .actions {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+            min-width: 105px;
+        }
+
+        .action-link,
+        .action-btn {
+            display: block;
+            width: 100%;
+            padding: 5px 6px;
+            border-radius: 6px;
+            text-decoration: none;
+            border: none;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: bold;
+            text-align: left;
+            background-color: transparent;
+            font-family: Arial, sans-serif;
+        }
+
+        .detail {
+            color: #0f766e;
+        }
+
+        .edit {
+            color: #2563eb;
+        }
+
+        .delete {
+            color: #dc2626;
+        }
+
+        .action-link:hover,
+        .action-btn:hover {
+            background-color: #f3f4f6;
+        }
+
+        .delete-form {
+            margin: 0;
         }
 
         .empty {
             text-align: center;
-            padding: 25px;
+            padding: 22px;
             color: #6b7280;
             font-weight: bold;
+            font-size: 14px;
         }
 
         .pagination {
-            margin-top: 24px;
+            margin-top: 18px;
             text-align: center;
         }
 
         .pagination a,
         .pagination span {
             display: inline-block;
-            padding: 9px 14px;
-            margin: 3px;
-            border-radius: 8px;
+            padding: 7px 11px;
+            margin: 2px;
+            border-radius: 7px;
             text-decoration: none;
             font-weight: 600;
             border: 1px solid #d1d5db;
-            font-size: 14px;
+            font-size: 13px;
         }
 
         .pagination a {
@@ -244,7 +339,7 @@
 
         @media (max-width: 1200px) {
             .container {
-                width: 94%;
+                width: 96%;
             }
 
             .search-form {
@@ -252,12 +347,13 @@
             }
 
             table {
-                font-size: 13px;
+                font-size: 12px;
+                min-width: 1000px;
             }
 
             th,
             td {
-                padding: 9px 8px;
+                padding: 7px 6px;
             }
         }
     </style>
@@ -268,7 +364,7 @@
         <div class="nav">
             <a class="home" href="{{ url_for('home') }}">Trang chủ</a>
             <a class="analytics" href="{{ url_for('analytics') }}">Phân tích dữ liệu</a>
-            <a class="search" href="{{ url_for('books') }}">Tìm kiếm dữ liệu</a>
+            <a class="add" href="{{ url_for('add_book') }}">Thêm mới</a>
         </div>
 
         <h1>Danh sách sách trong MongoDB</h1>
@@ -334,42 +430,79 @@
                 <table>
                     <thead>
                         <tr>
-                            <th>Mã sách</th>
-                            <th>Tên sách</th>
-                            <th>Tác giả</th>
-                            <th>Thể loại</th>
-                            <th>Giá</th>
-                            <th>Tags</th>
-                            <th>Số đánh giá</th>
+                            <th class="col-id">Mã sách</th>
+                            <th class="col-title">Tên sách</th>
+                            <th class="col-author">Tác giả</th>
+                            <th class="col-category">Thể loại</th>
+                            <th class="col-price">Giá</th>
+                            <th class="col-tags">Tags</th>
+                            <th class="col-review">Số đánh giá</th>
+                            <th class="col-date">Ngày nhập</th>
+                            <th class="col-action">Tùy chọn</th>
                         </tr>
                     </thead>
 
                     <tbody>
                         {% for book in books %}
                         <tr>
-                            <td>{{ book.book_id }}</td>
+                            <td class="col-id">{{ book.book_id }}</td>
 
-                            <td>
+                            <td class="col-title">
                                 <a class="book-link" href="{{ url_for('book_detail', book_id=book.book_id) }}">
                                     {{ book.title }}
                                 </a>
                             </td>
 
-                            <td>{{ book.author }}</td>
+                            <td class="col-author">{{ book.author }}</td>
 
-                            <td>{{ book.category }}</td>
+                            <td class="col-category">{{ book.category }}</td>
 
-                            <td class="price">
+                            <td class="price col-price">
                                 {{ "{:,.0f}".format(book.price) }} VNĐ
                             </td>
 
-                            <td>
+                            <td class="col-tags">
                                 {% for tag in book.tags %}
                                     <span class="tag">{{ tag }}</span>
                                 {% endfor %}
                             </td>
 
-                            <td>{{ book.reviews|length }}</td>
+                            <td class="review-count col-review">
+                                {{ book.reviews|length }}
+                            </td>
+
+                            <td class="date-cell col-date">
+                                {% if book.created_at %}
+                                    {{ book.created_at }}
+                                {% elif book.ngay_nhap %}
+                                    {{ book.ngay_nhap }}
+                                {% else %}
+                                    20/05/2026
+                                {% endif %}
+                            </td>
+
+                            <td class="col-action">
+                                <div class="actions">
+                                    <a class="action-link detail" href="{{ url_for('book_detail', book_id=book.book_id) }}">
+                                        ℹ Chi tiết
+                                    </a>
+
+                                    <a class="action-link edit" href="{{ url_for('edit_book', book_id=book.book_id) }}">
+                                        ✎ Chỉnh sửa
+                                    </a>
+
+                                    <form
+                                        class="delete-form"
+                                        method="POST"
+                                        action="{{ url_for('delete_book', book_id=book.book_id) }}"
+                                        onsubmit="return confirm('Bạn có chắc muốn xóa sách này không?');"
+                                    >
+                                        <button class="action-btn delete" type="submit">
+                                            🗑 Xóa
+                                        </button>
+                                    </form>
+                                </div>
+                            </td>
                         </tr>
                         {% endfor %}
                     </tbody>
