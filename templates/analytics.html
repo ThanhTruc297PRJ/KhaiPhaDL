@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Phân tích dữ liệu đánh giá sách</title>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        background: #f4f6f8;
+        padding: 14px;
+        font-size: 13px;
+      }
+
+      h1 {
+        color: #1f2937;
+        font-size: 24px;
+        margin-bottom: 12px;
+      }
+
+      h2 {
+        color: #1f2937;
+        font-size: 17px;
+        margin-bottom: 12px;
+      }
+
+      .container {
+        max-width: 1100px;
+        margin: auto;
+      }
+
+      .nav {
+        margin-bottom: 12px;
+      }
+
+      .nav a {
+        display: inline-block;
+        margin-right: 8px;
+        background: #16a34a;
+        color: white;
+        text-decoration: none;
+        padding: 7px 10px;
+        border-radius: 6px;
+        font-weight: bold;
+        font-size: 13px;
+      }
+
+      .nav a:hover {
+        background: #15803d;
+      }
+
+      .nav .orange {
+        background: #f97316;
+      }
+
+      .nav .orange:hover {
+        background: #ea580c;
+      }
+
+      .summary {
+        display: grid;
+        grid-template-columns: repeat(5, 1fr);
+        gap: 12px;
+        margin-bottom: 14px;
+      }
+
+      .summary-card {
+        background: white;
+        padding: 10px;
+        border-radius: 10px;
+        text-align: center;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+      }
+
+      .summary-card h2 {
+        color: #15803d;
+        font-size: 22px;
+        margin: 0;
+      }
+
+      .summary-card p {
+        margin: 4px 0 0;
+        font-size: 13px;
+      }
+
+      .grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 14px;
+      }
+
+      .card {
+        background: white;
+        padding: 14px;
+        border-radius: 10px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+        margin-bottom: 14px;
+      }
+
+      .chart-box {
+        height: 260px;
+        position: relative;
+      }
+
+      canvas {
+        width: 100% !important;
+        height: 100% !important;
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        background: white;
+        font-size: 13px;
+      }
+
+      th,
+      td {
+        border: 1px solid #ddd;
+        padding: 7px;
+        text-align: left;
+      }
+
+      th {
+        background: #16a34a;
+        color: white;
+      }
+
+      tr:nth-child(even) {
+        background: #f9fafb;
+      }
+
+      .keyword {
+        display: inline-block;
+        background: #dcfce7;
+        color: #166534;
+        padding: 5px 8px;
+        margin: 3px;
+        border-radius: 14px;
+        font-weight: bold;
+        font-size: 12px;
+      }
+
+      .note {
+        background: #eff6ff;
+        border-left: 4px solid #2563eb;
+        padding: 10px;
+        border-radius: 7px;
+        line-height: 1.5;
+        font-size: 13px;
+        margin-bottom: 14px;
+      }
+    </style>
+  </head>
+
+  <body>
+    <div class="container">
+      <div class="nav">
+        <a href="/">Trang chủ</a>
+        <a href="/books">Danh sách sách</a>
+        <a class="orange" href="/search">Tìm kiếm dữ liệu</a>
+      </div>
+
+      <h1>Phân tích dữ liệu đánh giá sách</h1>
+
+      <div class="note">
+        Hệ thống khai phá dữ liệu bookstore sử dụng Flask + MongoDB. Dữ liệu
+        được phân tích theo thể loại, cảm xúc đánh giá, từ khóa phổ biến và
+        thống kê tác giả.
+      </div>
+
+      <div class="summary">
+        <div class="summary-card">
+          <h2>{{ total_books }}</h2>
+          <p>Tổng số sách</p>
+        </div>
+
+        <div class="summary-card">
+          <h2>{{ total_reviews }}</h2>
+          <p>Tổng số đánh giá</p>
+        </div>
+
+        <div class="summary-card">
+          <h2>{{ total_categories }}</h2>
+          <p>Tổng số thể loại</p>
+        </div>
+
+        <div class="summary-card">
+          <h2>{{ author_labels|length }}</h2>
+          <p>Tổng số tác giả</p>
+        </div>
+
+        <div class="summary-card">
+          <h2>{{ top_keywords|length }}</h2>
+          <p>Từ khóa nổi bật</p>
+        </div>
+      </div>
+
+      <div class="grid">
+        <div class="card">
+          <h2>Số lượng sách theo thể loại</h2>
+
+          <div class="chart-box">
+            <canvas id="categoryChart"></canvas>
+          </div>
+        </div>
+
+        <div class="card">
+          <h2>Phân tích cảm xúc đánh giá</h2>
+
+          <div class="chart-box">
+            <canvas id="sentimentChart"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>Biểu đồ số sách theo tác giả</h2>
+
+        <div class="chart-box">
+          <canvas id="authorChart"></canvas>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>Top 15 từ khóa phổ biến trong bình luận</h2>
+
+        {% for word, count in top_keywords %}
+        <span class="keyword"> {{ word }}: {{ count }} </span>
+        {% endfor %}
+      </div>
+
+      <div class="card">
+        <h2>Rating trung bình theo thể loại</h2>
+
+        <table>
+          <thead>
+            <tr>
+              <th>Thể loại</th>
+              <th>Rating trung bình</th>
+            </tr>
+          </thead>
+
+          <tbody>
+            {% for item in avg_rating_by_category %}
+
+            <tr>
+              <td>{{ item.category }}</td>
+              <td>{{ item.avg_rating }}</td>
+            </tr>
+
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <script>
+
+      const categoryLabels = {{ category_labels | tojson }};
+      const categoryValues = {{ category_values | tojson }};
+
+      const sentimentLabels = {{ sentiment_labels | tojson }};
+      const sentimentValues = {{ sentiment_values | tojson }};
+
+      const authorLabels = {{ author_labels | tojson }};
+      const authorValues = {{ author_values | tojson }};
+
+      new Chart(document.getElementById("categoryChart"), {
+
+          type: "bar",
+
+          data: {
+
+              labels: categoryLabels,
+
+              datasets: [{
+
+                  label: "Số lượng sách",
+
+                  data: categoryValues,
+
+                  backgroundColor: "#16a34a"
+              }]
+          },
+
+          options: {
+              responsive: true,
+              maintainAspectRatio: false
+          }
+
+      });
+
+      new Chart(document.getElementById("sentimentChart"), {
+
+          type: "pie",
+
+          data: {
+
+              labels: sentimentLabels,
+
+              datasets: [{
+
+                  label: "Số lượng đánh giá",
+
+                  data: sentimentValues,
+
+                  backgroundColor: [
+                      "#16a34a",
+                      "#f59e0b",
+                      "#dc2626"
+                  ]
+              }]
+          },
+
+          options: {
+              responsive: true,
+              maintainAspectRatio: false
+          }
+
+      });
+
+      new Chart(document.getElementById("authorChart"), {
+
+          type: "bar",
+
+          data: {
+
+              labels: authorLabels,
+
+              datasets: [{
+
+                  label: "Số sách theo tác giả",
+
+                  data: authorValues,
+
+                  backgroundColor: "#2563eb"
+              }]
+          },
+
+          options: {
+              responsive: true,
+              maintainAspectRatio: false
+          }
+
+      });
+    </script>
+  </body>
+</html>
