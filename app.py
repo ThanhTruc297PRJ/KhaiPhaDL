@@ -6,12 +6,15 @@ from sklearn.metrics.pairwise import cosine_similarity
 from datetime import datetime
 import re
 import math
+import common.extract_keyword
 
 app = Flask(__name__)
 
 client = MongoClient("mongodb://localhost:27017/")
 db = client["book_mining_db"]
 books_collection = db["books"]
+customers_collection = db["customers"]
+orders_collection = db["orders"]
 
 
 STOPWORDS = {
@@ -62,13 +65,16 @@ def get_book_top_keywords(book, limit=12):
     ]
 
     full_text = clean_text(" ".join(text_parts))
+    common.extract_keyword.extract_text(full_text)
     words = full_text.split()
 
     for word in words:
         if len(word) > 2 and word not in STOPWORDS:
             word_counter[word] += 1
-
-    return word_counter.most_common(limit)
+    # print(word_counter)
+    return word_counter.most_common(limit)# chổ này là code cũ của em
+    # tạm có thể trình bày mình sử dụng thư viện, a xem có thư viện khác ổn hơn không
+    # return common.extract_keyword.extract_text(full_text)
 
 
 def get_tfidf_recommendations(book_id, limit=5):
@@ -526,6 +532,328 @@ def analytics():
         top_keywords=top_keywords,
         avg_rating_by_category=avg_rating_by_category
     )
+
+
+def generate_next_customer_id():
+    customers_data = list(customers_collection.find({}, {"customer_id": 1, "_id": 0}))
+    max_number = 0
+
+    for customer in customers_data:
+        customer_id = customer.get("customer_id", "")
+        if customer_id.startswith("C"):
+            try:
+                number = int(customer_id.replace("C", ""))
+                max_number = max(max_number, number)
+            except ValueError:
+                pass
+
+    return f"C{max_number + 1:03d}"
+
+
+def generate_next_order_id():
+    orders_data = list(orders_collection.find({}, {"order_id": 1, "_id": 0}))
+    max_number = 0
+
+    for order in orders_data:
+        order_id = order.get("order_id", "")
+        if order_id.startswith("O"):
+            try:
+                number = int(order_id.replace("O", ""))
+                max_number = max(max_number, number)
+            except ValueError:
+                pass
+
+    return f"O{max_number + 1:03d}"
+
+
+def get_order_status_list():
+    return ["Chờ xử lý", "Đã xác nhận", "Đang giao", "Hoàn thành", "Đã hủy"]
+
+
+@app.route("/customers")
+def customers():
+    keyword = request.args.get("keyword", "").strip()
+
+    query = {}
+    if keyword:
+        regex = {"$regex": keyword, "$options": "i"}
+        query["$or"] = [
+            {"customer_id": regex},
+            {"name": regex},
+            {"email": regex},
+            {"phone": regex},
+            {"address": regex}
+        ]
+
+    customers_data = list(customers_collection.find(query, {"_id": 0}).sort("customer_id", 1))
+
+    return render_template(
+        "customers.html",
+        customers=customers_data,
+        keyword=keyword,
+        total_customers=len(customers_data)
+    )
+
+
+@app.route("/add-customer", methods=["GET", "POST"])
+def add_customer():
+    if request.method == "POST":
+        name = request.form.get("name", "").strip()
+        email = request.form.get("email", "").strip()
+        phone = request.form.get("phone", "").strip()
+        address = request.form.get("address", "").strip()
+
+        if not name or not phone:
+            return render_template(
+                "add_customer.html",
+                error="Vui lòng nhập tên khách hàng và số điện thoại.",
+                form_data=request.form
+            )
+
+        new_customer = {
+            "customer_id": generate_next_customer_id(),
+            "name": name,
+            "email": email,
+            "phone": phone,
+            "address": address,
+            "created_at": datetime.now().strftime("%d/%m/%Y")
+        }
+
+        customers_collection.insert_one(new_customer)
+        return redirect(url_for("customers"))
+
+    return render_template("add_customer.html", error=None, form_data={})
+
+
+@app.route("/edit-customer/<customer_id>", methods=["GET", "POST"])
+def edit_customer(customer_id):
+    customer = customers_collection.find_one({"customer_id": customer_id}, {"_id": 0})
+
+    if not customer:
+        return "Không tìm thấy khách hàng", 404
+
+    if request.method == "POST":
+        name = request.form.get("name", "").strip()
+        email = request.form.get("email", "").strip()
+        phone = request.form.get("phone", "").strip()
+        address = request.form.get("address", "").strip()
+
+        if not name or not phone:
+            return render_template(
+                "edit_customer.html",
+                customer=customer,
+                error="Vui lòng nhập tên khách hàng và số điện thoại.",
+                form_data=request.form
+            )
+
+        customers_collection.update_one(
+            {"customer_id": customer_id},
+            {"$set": {
+                "name": name,
+                "email": email,
+                "phone": phone,
+                "address": address
+            }}
+        )
+
+        return redirect(url_for("customers"))
+
+    return render_template(
+        "edit_customer.html",
+        customer=customer,
+        error=None,
+        form_data=customer
+    )
+
+
+@app.route("/delete-customer/<customer_id>", methods=["POST"])
+def delete_customer(customer_id):
+    orders_count = orders_collection.count_documents({"customer_id": customer_id})
+
+    if orders_count > 0:
+        return "Không thể xóa khách hàng vì đã có đơn hàng liên quan.", 400
+
+    customers_collection.delete_one({"customer_id": customer_id})
+    return redirect(url_for("customers"))
+
+
+@app.route("/orders")
+def orders():
+    keyword = request.args.get("keyword", "").strip()
+    status = request.args.get("status", "").strip()
+
+    query = {}
+    if status:
+        query["status"] = status
+
+    if keyword:
+        regex = {"$regex": keyword, "$options": "i"}
+        query["$or"] = [
+            {"order_id": regex},
+            {"customer_id": regex},
+            {"customer_name": regex},
+            {"items.book_id": regex},
+            {"items.title": regex}
+        ]
+
+    orders_data = list(orders_collection.find(query, {"_id": 0}).sort("created_at", -1))
+    print(orders_data)
+    print("status =", status)
+    print("query =", query)
+    print("total all =", orders_collection.count_documents({}))
+    print("total filtered =", orders_collection.count_documents(query))
+    return render_template(
+        "orders.html",
+        orders=orders_data,
+        keyword=keyword,
+        selected_status=status,
+        status_list=get_order_status_list(),
+        total_orders=len(orders_data)
+    )
+
+
+@app.route("/add-order", methods=["GET", "POST"])
+def add_order():
+    customers_data = list(customers_collection.find({}, {"_id": 0}).sort("customer_id", 1))
+    books_data = list(books_collection.find({}, {"_id": 0}).sort("book_id", 1))
+    status_list = get_order_status_list()
+
+    if request.method == "POST":
+        customer_id = request.form.get("customer_id", "").strip()
+        book_id = request.form.get("book_id", "").strip()
+        quantity_text = request.form.get("quantity", "1").strip()
+        status = request.form.get("status", "Chờ xử lý").strip()
+        note = request.form.get("note", "").strip()
+
+        if not customer_id or not book_id:
+            return render_template(
+                "add_order.html",
+                customers=customers_data,
+                books=books_data,
+                status_list=status_list,
+                error="Vui lòng chọn khách hàng và sách.",
+                form_data=request.form
+            )
+
+        try:
+            quantity = int(quantity_text)
+            if quantity <= 0:
+                raise ValueError
+        except ValueError:
+            return render_template(
+                "add_order.html",
+                customers=customers_data,
+                books=books_data,
+                status_list=status_list,
+                error="Số lượng phải là số nguyên lớn hơn 0.",
+                form_data=request.form
+            )
+
+        customer = customers_collection.find_one({"customer_id": customer_id}, {"_id": 0})
+        book = books_collection.find_one({"book_id": book_id}, {"_id": 0})
+
+        if not customer or not book:
+            return render_template(
+                "add_order.html",
+                customers=customers_data,
+                books=books_data,
+                status_list=status_list,
+                error="Khách hàng hoặc sách không tồn tại.",
+                form_data=request.form
+            )
+
+        price = int(book.get("price", 0))
+        total_amount = price * quantity
+
+        new_order = {
+            "order_id": generate_next_order_id(),
+            "customer_id": customer.get("customer_id"),
+            "customer_name": customer.get("name"),
+            "customer_phone": customer.get("phone"),
+            "items": [
+                {
+                    "book_id": book.get("book_id"),
+                    "title": book.get("title"),
+                    "price": price,
+                    "quantity": quantity,
+                    "amount": total_amount
+                }
+            ],
+            "total_amount": total_amount,
+            "status": status,
+            "note": note,
+            "created_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        }
+
+        orders_collection.insert_one(new_order)
+        return redirect(url_for("orders"))
+
+    return render_template(
+        "add_order.html",
+        customers=customers_data,
+        books=books_data,
+        status_list=status_list,
+        error=None,
+        form_data={}
+    )
+
+
+@app.route("/order/<order_id>")
+def order_detail(order_id):
+    order = orders_collection.find_one({"order_id": order_id}, {"_id": 0})
+
+    if not order:
+        return "Không tìm thấy đơn hàng", 404
+
+    return render_template("order_detail.html", order=order)
+
+
+@app.route("/edit-order/<order_id>", methods=["GET", "POST"])
+def edit_order(order_id):
+    order = orders_collection.find_one({"order_id": order_id}, {"_id": 0})
+
+    if not order:
+        return "Không tìm thấy đơn hàng", 404
+
+    status_list = get_order_status_list()
+
+    if request.method == "POST":
+        status = request.form.get("status", "").strip()
+        note = request.form.get("note", "").strip()
+
+        if status not in status_list:
+            return render_template(
+                "edit_order.html",
+                order=order,
+                status_list=status_list,
+                error="Trạng thái đơn hàng không hợp lệ.",
+                form_data=request.form
+            )
+
+        orders_collection.update_one(
+            {"order_id": order_id},
+            {"$set": {
+                "status": status,
+                "note": note,
+                "updated_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            }}
+        )
+
+        return redirect(url_for("orders"))
+
+    return render_template(
+        "edit_order.html",
+        order=order,
+        status_list=status_list,
+        error=None,
+        form_data=order
+    )
+
+
+@app.route("/delete-order/<order_id>", methods=["POST"])
+def delete_order(order_id):
+    orders_collection.delete_one({"order_id": order_id})
+    return redirect(url_for("orders"))
 
 
 if __name__ == "__main__":
