@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <title>Tìm kiếm dữ liệu sách</title>
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #f4f6f8;
+            padding: 18px;
+            font-size: 14px;
+        }
+
+        .container {
+            max-width: 1150px;
+            margin: auto;
+        }
+
+        h1 {
+            color: #1f2937;
+            font-size: 26px;
+            margin-bottom: 14px;
+        }
+
+        .nav {
+            margin-bottom: 14px;
+        }
+
+        .nav a {
+            display: inline-block;
+            margin-right: 8px;
+            background: #16a34a;
+            color: white;
+            text-decoration: none;
+            padding: 8px 12px;
+            border-radius: 7px;
+            font-weight: bold;
+            font-size: 13px;
+        }
+
+        .nav a:hover {
+            background: #15803d;
+        }
+
+        .nav .blue {
+            background: #2563eb;
+        }
+
+        .nav .blue:hover {
+            background: #1d4ed8;
+        }
+
+        .card {
+            background: white;
+            padding: 16px;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            margin-bottom: 16px;
+        }
+
+        form {
+            display: grid;
+            grid-template-columns: 2fr 1fr 1fr auto;
+            gap: 10px;
+            align-items: end;
+        }
+
+        label {
+            display: block;
+            font-weight: bold;
+            margin-bottom: 5px;
+            color: #374151;
+        }
+
+        input, select {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #cbd5e1;
+            border-radius: 7px;
+            font-size: 13px;
+            box-sizing: border-box;
+        }
+
+        button {
+            background: #f97316;
+            color: white;
+            border: none;
+            padding: 9px 16px;
+            border-radius: 7px;
+            font-weight: bold;
+            cursor: pointer;
+            font-size: 13px;
+        }
+
+        button:hover {
+            background: #ea580c;
+        }
+
+        .result-count {
+            margin-bottom: 10px;
+            color: #374151;
+            font-weight: bold;
+        }
+
+        .book-card {
+            background: white;
+            padding: 14px;
+            border-radius: 12px;
+            margin-bottom: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+        }
+
+        .book-title {
+            font-size: 18px;
+            font-weight: bold;
+            color: #1f2937;
+            margin-bottom: 6px;
+        }
+
+        .book-title a {
+            color: #2563eb;
+            text-decoration: none;
+        }
+
+        .book-title a:hover {
+            text-decoration: underline;
+        }
+
+        .meta {
+            color: #4b5563;
+            margin-bottom: 8px;
+            line-height: 1.5;
+        }
+
+        .tag {
+            background: #dcfce7;
+            color: #166534;
+            padding: 3px 7px;
+            border-radius: 6px;
+            display: inline-block;
+            margin: 2px;
+            font-size: 12px;
+        }
+
+        .reviews {
+            margin-top: 10px;
+            border-top: 1px solid #e5e7eb;
+            padding-top: 8px;
+        }
+
+        .review-item {
+            background: #f9fafb;
+            padding: 8px;
+            border-radius: 8px;
+            margin-bottom: 6px;
+            font-size: 13px;
+        }
+
+        .rating {
+            color: #ca8a04;
+            font-weight: bold;
+        }
+
+        .empty {
+            background: #fff7ed;
+            border-left: 4px solid #f97316;
+            padding: 12px;
+            border-radius: 8px;
+            color: #7c2d12;
+        }
+
+        @media (max-width: 900px) {
+            form {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="container">
+
+    <div class="nav">
+        <a href="/">Trang chủ</a>
+        <a href="/books">Danh sách sách</a>
+        <a class="blue" href="/analytics">Phân tích dữ liệu</a>
+    </div>
+
+    <h1>Tìm kiếm dữ liệu sách và bình luận đánh giá</h1>
+
+    <div class="card">
+        <form method="GET" action="/search">
+            <div>
+                <label>Từ khóa</label>
+                <input type="text" name="keyword" value="{{ keyword }}" placeholder="Nhập tên sách, tag hoặc nội dung bình luận...">
+            </div>
+
+            <div>
+                <label>Loại tìm kiếm</label>
+                <select name="search_type">
+                    <option value="title" {% if search_type == "title" %}selected{% endif %}>Tên sách</option>
+                    <option value="review" {% if search_type == "review" %}selected{% endif %}>Bình luận đánh giá</option>
+                    <option value="tag" {% if search_type == "tag" %}selected{% endif %}>Tag sách</option>
+                </select>
+            </div>
+
+            <div>
+                <label>Thể loại</label>
+                <select name="category">
+                    <option value="">Tất cả</option>
+                    {% for cat in categories %}
+                        <option value="{{ cat }}" {% if selected_category == cat %}selected{% endif %}>{{ cat }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div>
+                <button type="submit">Tìm kiếm</button>
+            </div>
+        </form>
+    </div>
+
+    <div class="result-count">
+        Kết quả tìm thấy: {{ results|length }} sách
+    </div>
+
+    {% if results|length == 0 %}
+        <div class="empty">
+            Không tìm thấy dữ liệu phù hợp. Hãy thử từ khóa khác như: dễ hiểu, thực hành, Python, dữ liệu, sinh viên.
+        </div>
+    {% endif %}
+
+    {% for book in results %}
+        <div class="book-card">
+            <div class="book-title">
+                <a href="/book/{{ book.book_id }}">
+                    {{ book.book_id }} - {{ book.title }}
+                </a>
+            </div>
+
+            <div class="meta">
+                <b>Tác giả:</b> {{ book.author }} |
+                <b>Thể loại:</b> {{ book.category }} |
+                <b>Giá:</b> {{ "{:,.0f}".format(book.price) }} VNĐ |
+                <b>Số đánh giá:</b> {{ book.reviews|length }}
+            </div>
+
+            <div>
+                {% for tag in book.tags %}
+                    <span class="tag">{{ tag }}</span>
+                {% endfor %}
+            </div>
+
+            <div class="reviews">
+                <b>Một số bình luận:</b>
+
+                {% for review in book.display_reviews[:3] %}
+                    <div class="review-item">
+                        <span class="rating">Rating {{ review.rating }}/5</span>
+                        - {{ review.user }}:
+                        {{ review.comment }}
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+    {% endfor %}
+
+</div>
+
+</body>
+</html>
