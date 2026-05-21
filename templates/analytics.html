@@ -2,211 +2,96 @@
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <title>Phân tích dữ liệu đánh giá sách</title>
-
+    <title>Phân tích và khai phá dữ liệu</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            background: #f4f6f8;
-            padding: 14px;
-            font-size: 13px;
-        }
-
-        h1 {
-            color: #1f2937;
-            font-size: 24px;
-            margin-bottom: 12px;
-        }
-
-        h2 {
-            color: #1f2937;
-            font-size: 17px;
-            margin-bottom: 12px;
-        }
-
-        .container {
-            max-width: 1050px;
-            margin: auto;
-        }
-
-        .nav {
-            margin-bottom: 12px;
-        }
-
-        .nav a {
-            display: inline-block;
-            margin-right: 8px;
-            background: #16a34a;
-            color: white;
-            text-decoration: none;
-            padding: 7px 10px;
-            border-radius: 6px;
-            font-weight: bold;
-            font-size: 13px;
-        }
-
-        .nav a:hover {
-            background: #15803d;
-        }
-
-        .nav .orange {
-            background: #f97316;
-        }
-
-        .nav .orange:hover {
-            background: #ea580c;
-        }
-
-        .summary {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 12px;
-            margin-bottom: 14px;
-        }
-
-        .summary-card {
-            background: white;
-            padding: 10px;
-            border-radius: 10px;
-            text-align: center;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-        }
-
-        .summary-card h2 {
-            color: #15803d;
-            font-size: 24px;
-            margin: 0;
-        }
-
-        .summary-card p {
-            margin: 4px 0 0;
-            font-size: 13px;
-        }
-
-        .grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 14px;
-        }
-
-        .card {
-            background: white;
-            padding: 14px;
-            border-radius: 10px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-            margin-bottom: 14px;
-        }
-
-        .chart-box {
-            height: 220px;
-            position: relative;
-        }
-
-        canvas {
-            width: 100% !important;
-            height: 100% !important;
-        }
-
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            background: white;
-            font-size: 13px;
-        }
-
-        th, td {
-            border: 1px solid #ddd;
-            padding: 7px;
-            text-align: left;
-        }
-
-        th {
-            background: #16a34a;
-            color: white;
-        }
-
-        tr:nth-child(even) {
-            background: #f9fafb;
-        }
-
-        .keyword {
-            display: inline-block;
-            background: #dcfce7;
-            color: #166534;
-            padding: 5px 8px;
-            margin: 3px;
-            border-radius: 14px;
-            font-weight: bold;
-            font-size: 12px;
-        }
-
-        .note {
-            background: #eff6ff;
-            border-left: 4px solid #2563eb;
-            padding: 10px;
-            border-radius: 7px;
-            line-height: 1.5;
-            font-size: 13px;
-            margin-bottom: 14px;
-        }
+        * { box-sizing: border-box; }
+        body { margin: 0; font-family: Arial, sans-serif; background: #f4f6f8; color: #111827; font-size: 13px; }
+        .container { width: 94%; margin: 20px auto; }
+        .nav { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 14px; }
+        .nav a { display: inline-block; background: #16a34a; color: white; text-decoration: none; padding: 8px 12px; border-radius: 7px; font-weight: bold; }
+        .nav a.blue { background: #2563eb; }
+        .nav a.dark { background: #111827; }
+        .nav a.orange { background: #f97316; }
+        h1 { color: #1f2937; font-size: 26px; margin: 0 0 14px; }
+        h2 { color: #1f2937; font-size: 18px; margin: 0 0 12px; }
+        .note { background: #eff6ff; border-left: 4px solid #2563eb; padding: 11px; border-radius: 8px; line-height: 1.55; margin-bottom: 14px; }
+        .summary { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; margin-bottom: 14px; }
+        .summary-card { background: white; padding: 12px; border-radius: 11px; text-align: center; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+        .summary-card h2 { color: #15803d; font-size: 24px; margin: 0; }
+        .summary-card p { margin: 5px 0 0; font-weight: bold; color: #4b5563; }
+        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+        .card { background: white; padding: 14px; border-radius: 11px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); margin-bottom: 14px; }
+        .chart-box { height: 280px; position: relative; }
+        .chart-box.large { height: 340px; }
+        canvas { width: 100% !important; height: 100% !important; }
+        table { width: 100%; border-collapse: collapse; background: white; font-size: 13px; }
+        th, td { border: 1px solid #e5e7eb; padding: 8px; text-align: left; vertical-align: top; }
+        th { background: #16a34a; color: white; }
+        tr:nth-child(even) { background: #f9fafb; }
+        .keyword { display: inline-block; background: #dcfce7; color: #166534; padding: 5px 8px; margin: 3px; border-radius: 14px; font-weight: bold; font-size: 12px; }
+        .money { white-space: nowrap; text-align: right; font-weight: bold; }
+        .metric { font-weight: bold; color: #2563eb; }
+        .filter { display: flex; flex-wrap: wrap; gap: 10px; align-items: end; margin-bottom: 12px; }
+        .form-group label { display: block; font-weight: bold; margin-bottom: 5px; color: #374151; }
+        input { padding: 9px 10px; border: 1px solid #d1d5db; border-radius: 8px; min-width: 120px; }
+        button { background: #f97316; color: white; border: none; border-radius: 8px; padding: 10px 15px; font-weight: bold; cursor: pointer; }
+        button:hover { background: #ea580c; }
+        .empty { padding: 18px; text-align: center; color: #6b7280; font-weight: bold; background: #f9fafb; border-radius: 10px; }
+        .section-label { margin: 20px 0 10px; font-size: 21px; color: #111827; border-left: 5px solid #16a34a; padding-left: 10px; }
+        @media (max-width: 1100px) { .summary { grid-template-columns: repeat(2, 1fr); } .grid { grid-template-columns: 1fr; } .container { width: 96%; } }
     </style>
 </head>
 <body>
-
 <div class="container">
-
     <div class="nav">
-        <a href="/">Trang chủ</a>
-        <a href="/books">Danh sách sách</a>
-        <a class="orange" href="/search">Tìm kiếm dữ liệu</a>
+        <a href="{{ url_for('home') }}">Trang chủ</a>
+        <a class="blue" href="{{ url_for('books') }}">Sách</a>
+        <a class="dark" href="{{ url_for('customers') }}">Khách hàng</a>
+        <a class="orange" href="{{ url_for('orders') }}">Đơn hàng</a>
     </div>
 
-    <h1>Phân tích dữ liệu đánh giá sách</h1>
+    <h1>Phân tích và khai phá dữ liệu</h1>
 
     <div class="note">
-        Trang này thực hiện khai phá dữ liệu từ các bình luận đánh giá sách.
-        Hệ thống phân loại cảm xúc dựa trên điểm rating:
-        rating 4-5 là tích cực, rating 3 là trung lập, rating 1-2 là tiêu cực.
+        Trang này đã gộp nội dung từ phần <b>data_mining</b> vào <b>analytics</b>. Hệ thống vừa phân tích dữ liệu đánh giá sách,
+        vừa khai phá dữ liệu đơn hàng: luật kết hợp sách mua cùng nhau, phân khúc khách hàng RFM, sách bán chạy,
+        doanh thu theo tháng và trạng thái đơn hàng.
     </div>
 
     <div class="summary">
-        <div class="summary-card">
-            <h2>{{ total_books }}</h2>
-            <p>Tổng số sách</p>
-        </div>
+        <div class="summary-card"><h2>{{ total_books }}</h2><p>Sách</p></div>
+        <div class="summary-card"><h2>{{ total_reviews }}</h2><p>Đánh giá</p></div>
+        <div class="summary-card"><h2>{{ total_categories }}</h2><p>Thể loại</p></div>
+        <div class="summary-card"><h2>{{ total_customers }}</h2><p>Khách hàng</p></div>
+        <div class="summary-card"><h2>{{ total_orders }}</h2><p>Đơn hàng</p></div>
+    </div>
 
-        <div class="summary-card">
-            <h2>{{ total_reviews }}</h2>
-            <p>Tổng số đánh giá</p>
-        </div>
+    <div class="section-label">1. Phân tích dữ liệu đánh giá sách</div>
 
-        <div class="summary-card">
-            <h2>{{ total_categories }}</h2>
-            <p>Tổng số thể loại</p>
-        </div>
+    <div class="card">
+        <h2>Thống kê số lượng sách theo Tác giả</h2>
+        <div class="chart-box large"><canvas id="authorChart"></canvas></div>
     </div>
 
     <div class="grid">
         <div class="card">
             <h2>Số lượng sách theo thể loại</h2>
-            <div class="chart-box">
-                <canvas id="categoryChart"></canvas>
-            </div>
+            <div class="chart-box"><canvas id="categoryChart"></canvas></div>
         </div>
-
         <div class="card">
             <h2>Phân tích cảm xúc đánh giá</h2>
-            <div class="chart-box">
-                <canvas id="sentimentChart"></canvas>
-            </div>
+            <div class="chart-box"><canvas id="sentimentChart"></canvas></div>
         </div>
     </div>
 
     <div class="card">
-        <h2>Top 15 từ khóa phổ biến trong bình luận</h2>
+        <h2>Top 10 sách có nhiều review nhất</h2>
+        <div class="chart-box"><canvas id="topReviewBooksChart"></canvas></div>
+    </div>
 
+    <div class="card">
+        <h2>Top 15 từ khóa phổ biến trong bình luận</h2>
         {% for word, count in top_keywords %}
             <span class="keyword">{{ word }}: {{ count }}</span>
         {% endfor %}
@@ -214,98 +99,240 @@
 
     <div class="card">
         <h2>Rating trung bình theo thể loại</h2>
-
         <table>
-            <thead>
-            <tr>
-                <th>Thể loại</th>
-                <th>Rating trung bình</th>
-            </tr>
-            </thead>
-
+            <thead><tr><th>Thể loại</th><th>Rating trung bình</th></tr></thead>
             <tbody>
             {% for item in avg_rating_by_category %}
-            <tr>
-                <td>{{ item.category }}</td>
-                <td>{{ item.avg_rating }}</td>
-            </tr>
+                <tr><td>{{ item.category }}</td><td class="metric">{{ item.avg_rating }}</td></tr>
             {% endfor %}
             </tbody>
         </table>
     </div>
 
+    <div class="section-label">2. Khai phá dữ liệu đơn hàng và khách hàng</div>
+    <div class="grid">
+        <div class="card">
+            <h2>Phân khúc khách hàng RFM</h2>
+            <div class="chart-box"><canvas id="segmentChart"></canvas></div>
+        </div>
+        <div class="card">
+            <h2>Trạng thái đơn hàng</h2>
+            <div class="chart-box"><canvas id="statusChart"></canvas></div>
+        </div>
+    </div>
+
+    <div class="card">
+        <h2>Doanh thu theo tháng</h2>
+        <div class="chart-box"><canvas id="monthlyRevenueChart"></canvas></div>
+    </div>
+
+    <div class="grid">
+        <div class="card">
+            <h2>Top sách bán chạy theo số lượng</h2>
+            <table>
+                <thead><tr><th>Tên sách</th><th>Số lượng bán</th></tr></thead>
+                <tbody>
+                {% for title, qty in top_selling_books %}
+                    <tr><td>{{ title }}</td><td class="metric">{{ qty }}</td></tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        <div class="card">
+            <h2>Top sách tạo doanh thu</h2>
+            <table>
+                <thead><tr><th>Tên sách</th><th>Doanh thu</th></tr></thead>
+                <tbody>
+                {% for title, amount in top_revenue_books %}
+                    <tr><td>{{ title }}</td><td class="money">{{ "{:,.0f}".format(amount) }} VNĐ</td></tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="card">
+        <h2>Luật kết hợp sách mua cùng nhau</h2>
+        <div class="note">
+            Chức năng này thuộc nhóm <b>Association Rule Mining / Market Basket Analysis</b>. Khi thay đổi support hoặc confidence,
+            hệ thống gọi API bằng JavaScript để cập nhật bảng, không reload lại trang.
+        </div>
+        <form id="associationForm" class="filter">
+            <div class="form-group">
+                <label>Min support</label>
+                <input type="number" step="0.01" min="0" max="1" name="min_support" value="{{ min_support }}">
+            </div>
+            <div class="form-group">
+                <label>Min confidence</label>
+                <input type="number" step="0.01" min="0" max="1" name="min_confidence" value="{{ min_confidence }}">
+            </div>
+            <button type="submit">Khai phá luật</button>
+        </form>
+
+        <div id="rulesBox">
+            {% if association_rules %}
+            <table>
+                <thead><tr><th>Luật</th><th>Support</th><th>Confidence</th><th>Lift</th><th>Số đơn</th></tr></thead>
+                <tbody id="rulesBody">
+                {% for rule in association_rules %}
+                    <tr>
+                        <td><b>{{ rule.antecedent }}</b> - {{ rule.antecedent_title }}<br>⇒ <b>{{ rule.consequent }}</b> - {{ rule.consequent_title }}</td>
+                        <td class="metric">{{ rule.support }}</td>
+                        <td class="metric">{{ rule.confidence }}</td>
+                        <td class="metric">{{ rule.lift }}</td>
+                        <td>{{ rule.count }}</td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+            <div class="empty">Chưa tìm thấy luật kết hợp phù hợp.</div>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="card">
+        <h2>Top 20 khách hàng theo RFM</h2>
+        <table>
+            <thead><tr><th>Mã KH</th><th>Tên khách hàng</th><th>Recency</th><th>Frequency</th><th>Monetary</th><th>Ngày mua gần nhất</th><th>Phân khúc</th></tr></thead>
+            <tbody>
+            {% for c in customer_segments %}
+                <tr>
+                    <td>{{ c.customer_id }}</td>
+                    <td>{{ c.customer_name }}</td>
+                    <td>{{ c.recency }} ngày</td>
+                    <td>{{ c.frequency }}</td>
+                    <td class="money">{{ "{:,.0f}".format(c.monetary) }} VNĐ</td>
+                    <td>{{ c.last_order_date }}</td>
+                    <td><b>{{ c.segment }}</b></td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
 </div>
 
 <script>
-    const categoryLabels = {{ category_labels | tojson }};
-    const categoryValues = {{ category_values | tojson }};
+const categoryLabels = {{ category_labels | tojson }};
+const categoryValues = {{ category_values | tojson }};
+const sentimentLabels = {{ sentiment_labels | tojson }};
+const sentimentValues = {{ sentiment_values | tojson }};
+const segmentLabels = {{ segment_labels | tojson }};
+const segmentValues = {{ segment_values | tojson }};
+const statusLabels = {{ status_labels | tojson }};
+const statusValues = {{ status_values | tojson }};
+const monthlyLabels = {{ monthly_labels | tojson }};
+const monthlyValues = {{ monthly_values | tojson }};
+const authorLabels = {{ author_labels | tojson }};
+const authorValues = {{ author_values | tojson }};
+const topReviewBookLabels = {{ top_review_book_labels | tojson }};
+const topReviewBookValues = {{ top_review_book_values | tojson }};
 
-    const sentimentLabels = {{ sentiment_labels | tojson }};
-    const sentimentValues = {{ sentiment_values | tojson }};
-
-    new Chart(document.getElementById("categoryChart"), {
-        type: "bar",
-        data: {
-            labels: categoryLabels,
-            datasets: [{
-                label: "Số lượng sách",
-                data: categoryValues,
-                backgroundColor: "#16a34a"
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-                legend: {
-                    display: true
+new Chart(document.getElementById("authorChart"), {
+    type: "bar",
+    data: {
+        labels: authorLabels,
+        datasets: [{ label: "Số đầu sách sở hữu", data: authorValues }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { display: true } },
+        scales: {
+            x: {
+                ticks: {
+                    font: { size: 10 },
+                    maxRotation: 50,
+                    minRotation: 35,
+                    autoSkip: false
                 }
             },
-            scales: {
-                x: {
-                    ticks: {
-                        font: {
-                            size: 10
-                        }
-                    }
-                },
-                y: {
-                    beginAtZero: true,
-                    ticks: {
-                        font: {
-                            size: 10
-                        }
-                    }
-                }
+            y: {
+                beginAtZero: true,
+                ticks: { stepSize: 1 }
             }
         }
-    });
+    }
+});
 
-    new Chart(document.getElementById("sentimentChart"), {
-        type: "pie",
-        data: {
-            labels: sentimentLabels,
-            datasets: [{
-                label: "Số lượng đánh giá",
-                data: sentimentValues,
-                backgroundColor: ["#16a34a", "#f59e0b", "#dc2626"]
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-                legend: {
-                    labels: {
-                        font: {
-                            size: 11
-                        }
-                    }
-                }
+new Chart(document.getElementById("topReviewBooksChart"), {
+    type: "bar",
+    data: {
+        labels: topReviewBookLabels,
+        datasets: [{ label: "Số lượng lượt reviews", data: topReviewBookValues }]
+    },
+    options: {
+        indexAxis: "y",
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { display: true } },
+        scales: {
+            x: {
+                beginAtZero: true,
+                ticks: { stepSize: 1 }
+            },
+            y: {
+                ticks: { font: { size: 10 } }
             }
         }
-    });
+    }
+});
+
+new Chart(document.getElementById("categoryChart"), {
+    type: "bar",
+    data: { labels: categoryLabels, datasets: [{ label: "Số lượng sách", data: categoryValues }] },
+    options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true } } }
+});
+new Chart(document.getElementById("sentimentChart"), {
+    type: "pie",
+    data: { labels: sentimentLabels, datasets: [{ label: "Số lượng đánh giá", data: sentimentValues }] },
+    options: { responsive: true, maintainAspectRatio: false }
+});
+new Chart(document.getElementById("segmentChart"), {
+    type: "pie",
+    data: { labels: segmentLabels, datasets: [{ data: segmentValues }] },
+    options: { responsive: true, maintainAspectRatio: false }
+});
+new Chart(document.getElementById("statusChart"), {
+    type: "doughnut",
+    data: { labels: statusLabels, datasets: [{ data: statusValues }] },
+    options: { responsive: true, maintainAspectRatio: false }
+});
+new Chart(document.getElementById("monthlyRevenueChart"), {
+    type: "bar",
+    data: { labels: monthlyLabels, datasets: [{ label: "Doanh thu", data: monthlyValues }] },
+    options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true } } }
+});
+
+function renderRules(rules) {
+    if (!rules.length) {
+        document.getElementById("rulesBox").innerHTML = '<div class="empty">Chưa tìm thấy luật kết hợp phù hợp. Hãy giảm min_support hoặc min_confidence.</div>';
+        return;
+    }
+    let rows = rules.map(rule => `
+        <tr>
+            <td><b>${rule.antecedent}</b> - ${rule.antecedent_title}<br>⇒ <b>${rule.consequent}</b> - ${rule.consequent_title}</td>
+            <td class="metric">${rule.support}</td>
+            <td class="metric">${rule.confidence}</td>
+            <td class="metric">${rule.lift}</td>
+            <td>${rule.count}</td>
+        </tr>
+    `).join("");
+    document.getElementById("rulesBox").innerHTML = `
+        <table>
+            <thead><tr><th>Luật</th><th>Support</th><th>Confidence</th><th>Lift</th><th>Số đơn</th></tr></thead>
+            <tbody>${rows}</tbody>
+        </table>
+    `;
+}
+
+document.getElementById("associationForm").addEventListener("submit", async function (event) {
+    event.preventDefault();
+    const params = new URLSearchParams(new FormData(this));
+    const response = await fetch(`/api/association-rules?${params.toString()}`);
+    const data = await response.json();
+    renderRules(data.rules);
+});
 </script>
-
 </body>
 </html>

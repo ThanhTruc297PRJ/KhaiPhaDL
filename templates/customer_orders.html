@@ -2,7 +2,7 @@
 <html lang="vi">
 <head>
 <meta charset="UTF-8">
-<title>Quản lý đơn hàng</title>
+<title>Customer Orders</title>
 <style>*{box-sizing:border-box}body{margin:0;font-family:Arial,sans-serif;background:#f4f6f8;color:#111827}.container{width:94%;margin:24px auto}.nav{display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap}.nav a,.btn,a.btn{background:#16a34a;color:white;text-decoration:none;padding:9px 14px;border-radius:8px;font-weight:bold;border:none;cursor:pointer;font-size:14px}.nav .blue,.btn.blue{background:#2563eb}.nav .dark,.btn.dark{background:#111827}.nav .orange,.btn.orange{background:#f97316}.nav .gray,.btn.gray{background:#6b7280}.btn.red{background:#dc2626}h1{font-size:26px;color:#1f2937}.card{background:white;padding:16px;border-radius:12px;box-shadow:0 3px 12px rgba(0,0,0,.07);margin-bottom:16px}.search-form,.form-grid{display:grid;grid-template-columns:2fr 1fr 1fr auto auto;gap:10px;align-items:end}.form-grid{grid-template-columns:1fr 1fr}.full{grid-column:1/3}label{display:block;font-weight:bold;font-size:13px;margin-bottom:6px;color:#374151}input,select,textarea{width:100%;padding:10px;border:1px solid #d1d5db;border-radius:8px;font-size:14px}textarea{min-height:90px}.error{background:#fee2e2;color:#b91c1c;padding:11px;border-radius:8px;font-weight:bold;margin-bottom:12px}table{width:100%;border-collapse:collapse;background:white;font-size:13px}th{background:#16a34a;color:white;padding:10px;border:1px solid #e5e7eb}td{padding:9px;border:1px solid #e5e7eb;vertical-align:top}tr:nth-child(even){background:#f9fafb}.actions{display:flex;gap:6px;flex-wrap:wrap}.money{white-space:nowrap;text-align:right;font-weight:bold}.empty{text-align:center;color:#6b7280;font-weight:bold;padding:18px}.summary{font-weight:bold;margin-bottom:10px;color:#374151}.pagination{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-top:14px;flex-wrap:wrap}.page-links{display:flex;gap:6px;align-items:center;flex-wrap:wrap}.page-links a,.page-current{padding:7px 11px;border-radius:7px;text-decoration:none;font-weight:bold}.page-links a{background:#e5e7eb;color:#111827}.page-links a:hover{background:#d1d5db}.page-current{background:#2563eb;color:white}.muted{color:#6b7280;font-size:13px}.summary-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:14px}.summary-card{background:white;padding:12px;border-radius:11px;text-align:center;box-shadow:0 2px 8px rgba(0,0,0,.08)}.summary-card h2{margin:0;color:#15803d;font-size:22px}.summary-card p{margin:5px 0 0;color:#4b5563;font-weight:bold}@media(max-width:900px){.container{width:96%}.search-form,.form-grid,.summary-grid{grid-template-columns:1fr}.full{grid-column:1/2}table{font-size:12px}}</style>
 </head>
 <body>
@@ -16,20 +16,39 @@
         <a class="blue" href="/analytics">Phân tích</a>
     </div>
 
-    <h1>Quản lý đơn hàng</h1>
+    <h1>Customer Orders - Khách hàng và đơn hàng</h1>
+
+    <div class="summary-grid">
+        <div class="summary-card">
+            <h2>{{ total_customer_orders }}</h2>
+            <p>Bản ghi</p>
+        </div>
+        <div class="summary-card">
+            <h2>{{ total_customers }}</h2>
+            <p>Khách hàng trong trang</p>
+        </div>
+        <div class="summary-card">
+            <h2>{{ total_items }}</h2>
+            <p>Sách đã mua trong trang</p>
+        </div>
+        <div class="summary-card">
+            <h2>{{ "{:,.0f}".format(total_revenue) }}</h2>
+            <p>Doanh thu trong trang</p>
+        </div>
+    </div>
 
     <div class="card">
-        <form class="search-form" method="GET" action="/orders">
+        <form class="search-form" method="GET" action="/customer-orders">
             <div>
                 <label>Từ khóa</label>
-                <input name="keyword" value="{{ keyword }}" placeholder="Tìm mã đơn, khách hàng, sách...">
+                <input name="keyword" value="{{ keyword }}" placeholder="Tìm mã KH, tên KH, SĐT, email, mã đơn, tên sách...">
             </div>
 
             <div>
-                <label>Trạng thái</label>
+                <label>Trạng thái đơn</label>
                 <select name="status">
                     <option value="">Tất cả</option>
-                    {% for st in status_list %}
+                    {% for st in statuses %}
                         <option value="{{ st }}" {% if selected_status == st %}selected{% endif %}>{{ st }}</option>
                     {% endfor %}
                 </select>
@@ -45,62 +64,59 @@
             </div>
 
             <button class="btn orange" type="submit">Tìm kiếm</button>
-            <a class="btn gray" href="{{ url_for('orders') }}">Xóa lọc</a>
+            <a class="btn gray" href="{{ url_for('customer_orders') }}">Xóa lọc</a>
         </form>
 
         <div style="margin-top:12px">
-            <a class="btn dark" href="{{ url_for('add_order') }}">+ Thêm đơn hàng</a>
-            <a class="btn blue" href="{{ url_for('sync_customer_orders') }}">Đồng bộ Customer Orders</a>
+            <a class="btn blue" href="{{ url_for('sync_customer_orders') }}">Đồng bộ lại từ Orders</a>
         </div>
     </div>
 
     <div class="card">
         <div class="summary">
-            Hiển thị {{ start_index }} - {{ end_index }} / {{ total_orders }} đơn hàng
+            Hiển thị {{ start_index }} - {{ end_index }} / {{ total_customer_orders }} bản ghi customer_orders
         </div>
 
-        {% if orders %}
+        {% if customer_orders %}
         <table>
             <thead>
             <tr>
-                <th>Mã đơn</th>
+                <th>Mã CO</th>
                 <th>Khách hàng</th>
-                <th>Sách</th>
+                <th>Đơn hàng</th>
+                <th>Sản phẩm</th>
+                <th>Số lượng</th>
                 <th>Tổng tiền</th>
                 <th>Trạng thái</th>
-                <th>Ngày tạo</th>
-                <th>Tùy chọn</th>
+                <th>Ngày đặt</th>
             </tr>
             </thead>
 
             <tbody>
-            {% for order in orders %}
+            {% for co in customer_orders %}
             <tr>
+                <td><b>{{ co.customer_order_id }}</b></td>
                 <td>
-                    <a href="{{ url_for('order_detail', order_id=order.order_id) }}">
-                        <b>{{ order.order_id }}</b>
-                    </a>
+                    <b>{{ co.customer_name }}</b><br>
+                    <small>{{ co.customer_id }}</small><br>
+                    <small>{{ co.customer_phone }}</small><br>
+                    <small>{{ co.customer_email }}</small>
                 </td>
                 <td>
-                    {{ order.customer_name }}<br>
-                    <small>{{ order.customer_phone }}</small>
+                    <a href="{{ url_for('order_detail', order_id=co.order_id) }}">
+                        <b>{{ co.order_id }}</b>
+                    </a><br>
+                    <small>{{ co.order_note }}</small>
                 </td>
                 <td>
-                    {% for item in order.get("items", []) %}
-                        {{ item.title }} x {{ item.quantity }}<br>
+                    {% for item in co.get("items", []) %}
+                        {{ item.book_id }} - {{ item.title }} x {{ item.quantity }}<br>
                     {% endfor %}
                 </td>
-                <td class="money">{{ "{:,.0f}".format(order.total_amount) }} VNĐ</td>
-                <td><b>{{ order.status }}</b></td>
-                <td>{{ order.created_at }}</td>
-                <td>
-                    <div class="actions">
-                        <a class="btn blue" href="{{ url_for('edit_order', order_id=order.order_id) }}">Sửa</a>
-                        <form method="POST" action="{{ url_for('delete_order', order_id=order.order_id) }}" onsubmit="return confirm('Bạn có chắc muốn xóa đơn hàng này không?');">
-                            <button class="btn red" type="submit">Xóa</button>
-                        </form>
-                    </div>
-                </td>
+                <td>{{ co.total_items }}</td>
+                <td class="money">{{ "{:,.0f}".format(co.total_amount) }} VNĐ</td>
+                <td><b>{{ co.order_status }}</b></td>
+                <td>{{ co.order_date }}</td>
             </tr>
             {% endfor %}
             </tbody>
@@ -113,26 +129,28 @@
 
             <div class="page-links">
                 {% if page > 1 %}
-                    <a href="{{ url_for('orders', keyword=keyword, status=selected_status, per_page=per_page, page=1) }}">Đầu</a>
-                    <a href="{{ url_for('orders', keyword=keyword, status=selected_status, per_page=per_page, page=page-1) }}">Trước</a>
+                    <a href="{{ url_for('customer_orders', keyword=keyword, status=selected_status, per_page=per_page, page=1) }}">Đầu</a>
+                    <a href="{{ url_for('customer_orders', keyword=keyword, status=selected_status, per_page=per_page, page=page-1) }}">Trước</a>
                 {% endif %}
 
                 {% for p in range(1, total_pages + 1) %}
                     {% if p == page %}
                         <span class="page-current">{{ p }}</span>
                     {% elif p >= page - 2 and p <= page + 2 %}
-                        <a href="{{ url_for('orders', keyword=keyword, status=selected_status, per_page=per_page, page=p) }}">{{ p }}</a>
+                        <a href="{{ url_for('customer_orders', keyword=keyword, status=selected_status, per_page=per_page, page=p) }}">{{ p }}</a>
                     {% endif %}
                 {% endfor %}
 
                 {% if page < total_pages %}
-                    <a href="{{ url_for('orders', keyword=keyword, status=selected_status, per_page=per_page, page=page+1) }}">Sau</a>
-                    <a href="{{ url_for('orders', keyword=keyword, status=selected_status, per_page=per_page, page=total_pages) }}">Cuối</a>
+                    <a href="{{ url_for('customer_orders', keyword=keyword, status=selected_status, per_page=per_page, page=page+1) }}">Sau</a>
+                    <a href="{{ url_for('customer_orders', keyword=keyword, status=selected_status, per_page=per_page, page=total_pages) }}">Cuối</a>
                 {% endif %}
             </div>
         </div>
         {% else %}
-            <div class="empty">Chưa có đơn hàng phù hợp.</div>
+            <div class="empty">
+                Chưa có dữ liệu customer_orders. Bấm “Đồng bộ lại từ Orders” để tạo dữ liệu.
+            </div>
         {% endif %}
     </div>
 </div>
