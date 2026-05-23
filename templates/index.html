@@ -1,146 +1,184 @@
-<!DOCTYPE html>
-<html lang="vi">
-<head>
-    <meta charset="UTF-8">
-    <title>Hệ thống khai phá dữ liệu sách</title>
+{% extends "base.html" %}
+{% block title %}Dashboard - Book Mining{% endblock %}
 
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            background: #f4f6f8;
-            padding: 18px;
-            font-size: 14px;
-        }
+{% block content %}
+<h4 class="page-title">Tổng quan hệ thống</h4>
 
-        .container {
-            max-width: 1000px;
-            margin: auto;
-        }
-
-        .card {
-            background: white;
-            padding: 22px;
-            border-radius: 14px;
-            margin-bottom: 18px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-        }
-
-        h1 {
-            color: #1f2937;
-            font-size: 28px;
-            margin: 0 0 12px;
-            line-height: 1.25;
-        }
-
-        p {
-            font-size: 15px;
-            line-height: 1.5;
-            margin: 0;
-        }
-
-        .stats {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 14px;
-        }
-
-        .stat-box {
-            background: #e8f5e9;
-            padding: 14px;
-            border-radius: 12px;
-            text-align: center;
-        }
-
-        .stat-box h2 {
-            margin: 0;
-            color: #15803d;
-            font-size: 28px;
-        }
-
-        .stat-box p {
-            margin-top: 6px;
-            font-size: 14px;
-        }
-
-        .menu {
-            margin-top: 18px;
-            display: flex;
-            gap: 10px;
-            flex-wrap: wrap;
-        }
-
-        a {
-            display: inline-block;
-            background: #16a34a;
-            color: white;
-            text-decoration: none;
-            padding: 9px 13px;
-            border-radius: 8px;
-            font-weight: bold;
-            font-size: 14px;
-        }
-
-        a:hover {
-            background: #15803d;
-        }
-
-        .secondary {
-            background: #2563eb;
-        }
-
-        .secondary:hover {
-            background: #1d4ed8;
-        }
-
-        .search-btn {
-            background: #f97316;
-        }
-
-        .search-btn:hover {
-            background: #ea580c;
-        }
-    </style>
-</head>
-<body>
-
-<div class="container">
-
-    <div class="card">
-        <h1>Hệ thống quản lý và khai phá dữ liệu đánh giá sách</h1>
-
-        <p>
-            Ứng dụng sử dụng Flask, MongoDB và dữ liệu đánh giá sách để quản lý dữ liệu phi cấu trúc,
-            phân tích cảm xúc, thống kê từ khóa và trực quan hóa kết quả khai phá dữ liệu.
-        </p>
-
-        <div class="menu">
-            <a href="/books">Xem danh sách sách</a>
-            <a class="secondary" href="/customers">Quản lý khách hàng</a>
-            <a class="secondary" href="/orders">Quản lý đơn hàng</a>
-            <a class="secondary" href="/customer-orders">Customer Orders</a>
-            <a class="secondary" href="/analytics">Phân tích dữ liệu</a>
-            <a class="search-btn" href="/search">Tìm kiếm dữ liệu</a>
+<div class="row">
+    <div class="col-md-3">
+        <div class="card card-stats card-primary">
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-5"><div class="icon-big"><i class="la la-book"></i></div></div>
+                    <div class="col-7 d-flex align-items-center">
+                        <div class="numbers">
+                            <p class="card-category">Sách</p>
+                            <h4 class="card-title">{{ total_books }}</h4>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 
-    <div class="stats">
-        <div class="stat-box">
-            <h2>{{ total_books }}</h2>
-            <p>Tổng số sách</p>
-        </div>
-
-        <div class="stat-box">
-            <h2>{{ total_reviews }}</h2>
-            <p>Tổng số đánh giá</p>
-        </div>
-
-        <div class="stat-box">
-            <h2>{{ total_categories }}</h2>
-            <p>Tổng số thể loại</p>
+    <div class="col-md-3">
+        <div class="card card-stats card-success">
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-5"><div class="icon-big"><i class="la la-comments"></i></div></div>
+                    <div class="col-7 d-flex align-items-center">
+                        <div class="numbers">
+                            <p class="card-category">Đánh giá</p>
+                            <h4 class="card-title">{{ total_reviews }}</h4>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 
+    <div class="col-md-3">
+        <div class="card card-stats card-warning">
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-5"><div class="icon-big"><i class="la la-users"></i></div></div>
+                    <div class="col-7 d-flex align-items-center">
+                        <div class="numbers">
+                            <p class="card-category">Khách hàng</p>
+                            <h4 class="card-title">{{ total_customers | default(0) }}</h4>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-3">
+        <div class="card card-stats card-danger">
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-5"><div class="icon-big"><i class="la la-shopping-cart"></i></div></div>
+                    <div class="col-7 d-flex align-items-center">
+                        <div class="numbers">
+                            <p class="card-category">Đơn hàng</p>
+                            <h4 class="card-title">{{ total_orders | default(0) }}</h4>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
 
-</body>
-</html>
+<div class="row">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <div class="card-title">Chức năng chính</div>
+                <p class="card-category">Quản lý dữ liệu và khai phá dữ liệu sách</p>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-4 mb-3">
+                        <a class="btn btn-primary btn-block" href="{{ url_for('books') }}"><i class="la la-book"></i> Quản lý sách</a>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <a class="btn btn-success btn-block" href="{{ url_for('customers') }}"><i class="la la-users"></i> Khách hàng</a>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <a class="btn btn-warning btn-block" href="{{ url_for('orders') }}"><i class="la la-shopping-cart"></i> Đơn hàng</a>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <a class="btn btn-info btn-block" href="{{ url_for('customer_orders') }}"><i class="la la-link"></i> Đơn hàng của khách</a>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <a class="btn btn-warning btn-block" href="{{ url_for('customer_reviews') }}"><i class="la la-star"></i> Đánh giá khách hàng</a>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <a class="btn btn-danger btn-block" href="{{ url_for('analytics') }}"><i class="la la-line-chart"></i> Phân tích</a>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <a class="btn btn-secondary btn-block" href="{{ url_for('add_order') }}"><i class="la la-plus"></i> Tạo đơn mới</a>
+                    </div>
+                </div>
+
+                <hr>
+                <p class="mb-0">
+                    Hệ thống hỗ trợ tìm kiếm sách theo metadata/review, phân tích cảm xúc theo rating,
+                    thống kê dashboard, luật kết hợp sản phẩm và phân cụm khách hàng.
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="card card-stats card-success">
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-5"><div class="icon-big"><i class="la la-money"></i></div></div>
+                    <div class="col-7 d-flex align-items-center">
+                        <div class="numbers">
+                            <p class="card-category">Doanh thu</p>
+                            <h4 class="card-title">{{ "{:,.0f}".format(total_revenue | default(0)) }} VNĐ</h4>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card card-stats card-info">
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-5"><div class="icon-big"><i class="la la-tags"></i></div></div>
+                    <div class="col-7 d-flex align-items-center">
+                        <div class="numbers">
+                            <p class="card-category">Thể loại</p>
+                            <h4 class="card-title">{{ total_categories }}</h4>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card card-stats card-warning">
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-5"><div class="icon-big"><i class="la la-star"></i></div></div>
+                    <div class="col-7 d-flex align-items-center">
+                        <div class="numbers">
+                            <p class="card-category">Đánh giá khách hàng</p>
+                            <h4 class="card-title">{{ total_customer_reviews | default(0) }}</h4>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% if recent_orders %}
+<div class="card">
+    <div class="card-header">
+        <div class="card-title">Đơn hàng gần đây</div>
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead><tr><th>Mã đơn</th><th>Khách hàng</th><th>Tổng tiền</th><th>Trạng thái</th><th>Ngày tạo</th></tr></thead>
+                <tbody>
+                {% for order in recent_orders %}
+                <tr>
+                    <td><a href="{{ url_for('order_detail', order_id=order.order_id) }}"><b>{{ order.order_id }}</b></a></td>
+                    <td>{{ order.customer_name }}</td>
+                    <td class="money">{{ "{:,.0f}".format(order.total_amount) }} VNĐ</td>
+                    <td><span class="badge badge-info">{{ order.status }}</span></td>
+                    <td>{{ order.created_at }}</td>
+                </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endblock %}

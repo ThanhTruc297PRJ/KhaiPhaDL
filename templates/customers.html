@@ -1,22 +1,130 @@
-<!DOCTYPE html><html lang="vi"><head><meta charset="UTF-8"><title>Quản lý khách hàng</title>
-<style>
-*{box-sizing:border-box}body{margin:0;font-family:Arial,sans-serif;background:#f4f6f8;color:#111827}.container{width:92%;margin:24px auto}.nav{display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap}.nav a,.btn,a.btn{background:#16a34a;color:white;text-decoration:none;padding:9px 14px;border-radius:8px;font-weight:bold;border:none;cursor:pointer;font-size:14px}.nav .blue,.btn.blue{background:#2563eb}.nav .dark,.btn.dark{background:#111827}.nav .orange,.btn.orange{background:#f97316}.nav .gray,.btn.gray{background:#6b7280}.btn.red{background:#dc2626}h1{font-size:26px;color:#1f2937}.card{background:white;padding:16px;border-radius:12px;box-shadow:0 3px 12px rgba(0,0,0,.07);margin-bottom:16px}.search-form,.form-grid{display:grid;grid-template-columns:2fr 1fr auto;gap:10px;align-items:end}.form-grid{grid-template-columns:1fr 1fr}.full{grid-column:1/3}label{display:block;font-weight:bold;font-size:13px;margin-bottom:6px;color:#374151}input,select,textarea{width:100%;padding:10px;border:1px solid #d1d5db;border-radius:8px;font-size:14px}textarea{min-height:90px}.error{background:#fee2e2;color:#b91c1c;padding:11px;border-radius:8px;font-weight:bold;margin-bottom:12px}table{width:100%;border-collapse:collapse;background:white;font-size:13px}th{background:#16a34a;color:white;padding:10px;border:1px solid #e5e7eb}td{padding:9px;border:1px solid #e5e7eb;vertical-align:top}tr:nth-child(even){background:#f9fafb}.actions{display:flex;gap:6px;flex-wrap:wrap}.money{white-space:nowrap;text-align:right;font-weight:bold}.empty{text-align:center;color:#6b7280;font-weight:bold;padding:18px}.summary{font-weight:bold;margin-bottom:10px;color:#374151}@media(max-width:900px){.container{width:96%}.search-form,.form-grid{grid-template-columns:1fr}.full{grid-column:1/2}table{font-size:12px}}
-</style>
-</head><body><div class="container"><div class="nav"><a href="/">Trang chủ</a><a class="blue" href="/books">Sách</a><a class="dark" href="/customers">Khách hàng</a><a class="orange" href="/orders">Đơn hàng</a><a class="blue" href="/analytics">Phân tích</a></div>
-<h1>Quản lý khách hàng</h1>
+{% extends "base.html" %}
+{% block title %}Khách hàng{% endblock %}
+
+{% block content %}
+<h4 class="page-title">Quản lý khách hàng</h4>
+
 <div class="card">
-<form class="search-form" method="GET" action="/customers">
-<div><label>Từ khóa</label><input name="keyword" value="{{ keyword }}" placeholder="Tìm mã, tên, email, số điện thoại, địa chỉ..."></div>
-<div><a class="btn dark" href="{{ url_for('add_customer') }}">+ Thêm khách hàng</a></div>
-<button class="btn orange" type="submit">Tìm kiếm</button>
-</form>
+    <div class="card-header d-flex justify-content-between align-items-center flex-wrap">
+        <div>
+            <div class="card-title">Danh sách khách hàng</div>
+            <p class="card-category">
+                Hiển thị {{ start_index }} - {{ end_index }} / {{ total_customers }} khách hàng
+            </p>
+        </div>
+        <a class="btn btn-primary" href="{{ url_for('add_customer') }}">
+            <i class="la la-user-plus"></i> Thêm khách hàng
+        </a>
+    </div>
+
+    <div class="card-body">
+        <form class="row mb-3" method="GET" action="{{ url_for('customers') }}">
+            <div class="col-md-7 mb-2">
+                <label>Từ khóa</label>
+                <input class="form-control" name="keyword" value="{{ keyword }}"
+                       placeholder="Tìm tên, số điện thoại, email, địa chỉ, segment...">
+            </div>
+
+            <div class="col-md-2 mb-2">
+                <label>Số dòng/trang</label>
+                <select class="form-control" name="per_page">
+                    {% for size in allowed_per_pages %}
+                    <option value="{{ size }}" {% if per_page == size %}selected{% endif %}>{{ size }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="col-md-3 mb-2 d-flex align-items-end">
+                <button class="btn btn-success mr-2" type="submit">
+                    <i class="la la-search"></i> Tìm
+                </button>
+                <a class="btn btn-secondary" href="{{ url_for('customers') }}">Reset</a>
+            </div>
+        </form>
+
+        {% if customers %}
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                <tr>
+                    <th>Mã KH</th>
+                    <th>Tên</th>
+                    <th>Điện thoại</th>
+                    <th>Email</th>
+                    <th>Địa chỉ</th>
+                    <th>Segment</th>
+                    <th>Đơn hàng</th>
+                    <th>Review</th>
+                    <th>Tùy chọn</th>
+                </tr>
+                </thead>
+                <tbody>
+                {% for c in customers %}
+                <tr>
+                    <td><b>{{ c.customer_id }}</b></td>
+                    <td>{{ c.name }}</td>
+                    <td>{{ c.phone }}</td>
+                    <td>{{ c.email }}</td>
+                    <td>{{ c.address }}</td>
+                    <td><span class="badge badge-info">{{ c.segment_demo | default('') }}</span></td>
+                    <td><span class="badge badge-success">{{ c.order_count | default(0) }}</span></td>
+                    <td><a href="{{ url_for('customer_reviews', keyword=c.customer_id) }}"><span class="badge badge-warning">{{ c.review_count | default(0) }}</span></a></td>
+                    <td>
+                        <div class="btn-group">
+                            <a class="btn btn-sm btn-primary"
+                               href="{{ url_for('edit_customer', customer_id=c.customer_id) }}">Sửa</a>
+                            <form method="POST"
+                                  action="{{ url_for('delete_customer', customer_id=c.customer_id) }}"
+                                  onsubmit="return confirm('Xóa khách hàng này?');">
+                                <button class="btn btn-sm btn-danger" type="submit">Xóa</button>
+                            </form>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <nav>
+            <ul class="pagination justify-content-end">
+                {% if page > 1 %}
+                <li class="page-item">
+                    <a class="page-link"
+                       href="{{ url_for('customers', keyword=keyword, per_page=per_page, page=page-1) }}">
+                        Trước
+                    </a>
+                </li>
+                {% endif %}
+
+                {% for p in range(1, total_pages + 1) %}
+                    {% if p == page %}
+                    <li class="page-item active">
+                        <span class="page-link">{{ p }}</span>
+                    </li>
+                    {% elif p >= page - 2 and p <= page + 2 %}
+                    <li class="page-item">
+                        <a class="page-link"
+                           href="{{ url_for('customers', keyword=keyword, per_page=per_page, page=p) }}">
+                            {{ p }}
+                        </a>
+                    </li>
+                    {% endif %}
+                {% endfor %}
+
+                {% if page < total_pages %}
+                <li class="page-item">
+                    <a class="page-link"
+                       href="{{ url_for('customers', keyword=keyword, per_page=per_page, page=page+1) }}">
+                        Sau
+                    </a>
+                </li>
+                {% endif %}
+            </ul>
+        </nav>
+        {% else %}
+        <div class="alert alert-warning">Chưa có khách hàng phù hợp.</div>
+        {% endif %}
+    </div>
 </div>
-<div class="card">
-<div class="summary">Tổng số khách hàng: {{ total_customers }}</div>
-{% if customers %}
-<table><thead><tr><th>Mã KH</th><th>Tên khách hàng</th><th>Email</th><th>Số điện thoại</th><th>Địa chỉ</th><th>Ngày tạo</th><th>Tùy chọn</th></tr></thead><tbody>
-{% for customer in customers %}
-<tr><td>{{ customer.customer_id }}</td><td><b>{{ customer.name }}</b></td><td>{{ customer.email }}</td><td>{{ customer.phone }}</td><td>{{ customer.address }}</td><td>{{ customer.created_at }}</td><td><div class="actions"><a class="btn blue" href="{{ url_for('edit_customer', customer_id=customer.customer_id) }}">Sửa</a><form method="POST" action="{{ url_for('delete_customer', customer_id=customer.customer_id) }}" onsubmit="return confirm('Bạn có chắc muốn xóa khách hàng này không?');"><button class="btn red" type="submit">Xóa</button></form></div></td></tr>
-{% endfor %}</tbody></table>
-{% else %}<div class="empty">Chưa có khách hàng phù hợp.</div>{% endif %}
-</div></div></body></html>
+{% endblock %}

@@ -3,6 +3,9 @@ from pymongo import MongoClient
 from collections import Counter, defaultdict
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
+from sklearn.cluster import KMeans
+from sklearn.preprocessing import StandardScaler
+from sklearn.metrics import silhouette_score
 from datetime import datetime
 import re
 import math
@@ -16,6 +19,7 @@ books_collection = db["books"]
 customers_collection = db["customers"]
 orders_collection = db["orders"]
 customer_orders_collection = db["customer_orders"]
+customer_reviews_collection = db["customer_reviews"]
 
 
 STOPWORDS = {
@@ -150,18 +154,41 @@ def home():
     total_reviews = 0
     categories = set()
 
-    books = books_collection.find()
+    books = books_collection.find({}, {"_id": 0})
 
     for book in books:
         total_reviews += len(book.get("reviews", []))
         categories.add(book.get("category", "Không xác định"))
 
+    total_customers = customers_collection.count_documents({})
+    total_orders = orders_collection.count_documents({})
+    total_customer_reviews = customer_reviews_collection.count_documents({})
+
+    revenue_pipeline = [
+        {"$group": {"_id": None, "total": {"$sum": "$total_amount"}}}
+    ]
+    revenue_result = list(orders_collection.aggregate(revenue_pipeline))
+    total_revenue = revenue_result[0]["total"] if revenue_result else 0
+
+    recent_orders = list(
+        orders_collection
+        .find({}, {"_id": 0})
+        .sort("created_at", -1)
+        .limit(6)
+    )
+
     return render_template(
         "index.html",
         total_books=total_books,
         total_reviews=total_reviews,
-        total_categories=len(categories)
+        total_categories=len(categories),
+        total_customers=total_customers,
+        total_orders=total_orders,
+        total_customer_reviews=total_customer_reviews,
+        total_revenue=total_revenue,
+        recent_orders=recent_orders
     )
+
 
 
 @app.route("/books")
@@ -559,6 +586,13 @@ def analytics():
     except ValueError:
         min_confidence = 0.2
 
+    try:
+        cluster_k = int(request.args.get("cluster_k", 4))
+    except ValueError:
+        cluster_k = 4
+
+    cluster_evaluation = evaluate_customer_clusters(selected_k=cluster_k)
+
     association_rules = mine_association_rules(
         min_support=min_support,
         min_confidence=min_confidence,
@@ -566,6 +600,8 @@ def analytics():
     )
     customer_segments, segment_counter = get_customer_segments()
     sales_summary = get_sales_mining_summary()
+    behavior_summary = get_customer_purchase_behavior()
+    customer_review_stats = get_customer_review_stats()
 
     total_orders = orders_collection.count_documents({})
     total_customers = customers_collection.count_documents({})
@@ -577,11 +613,17 @@ def analytics():
         total_categories=len(category_counter),
         total_customers=total_customers,
         total_orders=total_orders,
+        total_customer_reviews=customer_review_stats["total_customer_reviews"],
+        reviewer_count=customer_review_stats["reviewer_count"],
 
         category_labels=list(category_counter.keys()),
         category_values=list(category_counter.values()),
         sentiment_labels=list(sentiment_counter.keys()),
         sentiment_values=list(sentiment_counter.values()),
+        customer_review_sentiment_labels=list(customer_review_stats["sentiment_counter"].keys()),
+        customer_review_sentiment_values=list(customer_review_stats["sentiment_counter"].values()),
+        customer_review_rating_labels=list(customer_review_stats["rating_counter"].keys()),
+        customer_review_rating_values=list(customer_review_stats["rating_counter"].values()),
 
         top_keywords=top_keywords,
         avg_rating_by_category=avg_rating_by_category,
@@ -602,7 +644,31 @@ def analytics():
         status_labels=list(sales_summary["status_counter"].keys()),
         status_values=list(sales_summary["status_counter"].values()),
         monthly_labels=[item[0] for item in sales_summary["monthly_revenue"]],
-        monthly_values=[item[1] for item in sales_summary["monthly_revenue"]]
+        monthly_values=[item[1] for item in sales_summary["monthly_revenue"]],
+
+        top_customers_by_revenue=behavior_summary["top_customers_by_revenue"],
+        top_customers_by_orders=behavior_summary["top_customers_by_orders"],
+        customer_revenue_labels=[
+            f'{item["customer_id"]} - {item["customer_name"]}'
+            for item in behavior_summary["top_customers_by_revenue"]
+        ],
+        customer_revenue_values=[
+            item["total_revenue"]
+            for item in behavior_summary["top_customers_by_revenue"]
+        ],
+        customer_order_labels=[
+            f'{item["customer_id"]} - {item["customer_name"]}'
+            for item in behavior_summary["top_customers_by_orders"]
+        ],
+        customer_order_values=[
+            item["order_count"]
+            for item in behavior_summary["top_customers_by_orders"]
+        ],
+        purchase_category_labels=[item[0] for item in behavior_summary["category_purchase"]],
+        purchase_category_values=[item[1] for item in behavior_summary["category_purchase"]],
+        behavior_summary=behavior_summary,
+        cluster_evaluation=cluster_evaluation,
+        cluster_k=cluster_evaluation["selected_k"]
     )
 
 @app.route("/api/association-rules")
@@ -709,6 +775,213 @@ def generate_next_customer_id():
                 pass
 
     return f"C{max_number + 1:03d}"
+
+
+def normalize_customer_name(name):
+    return re.sub(r"\s+", " ", str(name or "").strip().lower())
+
+
+def find_customer_by_name(name):
+    normalized = normalize_customer_name(name)
+    if not normalized:
+        return None
+
+    for customer in customers_collection.find({}, {"_id": 0}):
+        if normalize_customer_name(customer.get("name")) == normalized:
+            return customer
+
+    return None
+
+
+def get_or_create_reviewer_customer(reviewer_name):
+    """
+    Reviewer cũng là customer.
+    Nếu reviewer chưa có trong customers thì tạo customer mới với source = reviewer.
+    """
+    reviewer_name = re.sub(r"\s+", " ", str(reviewer_name or "").strip())
+
+    if not reviewer_name:
+        reviewer_name = "Khách ẩn danh"
+
+    existing_customer = find_customer_by_name(reviewer_name)
+
+    if existing_customer:
+        return existing_customer
+
+    customer_id = generate_next_customer_id()
+    slug = re.sub(r"[^a-zA-Z0-9]+", "", reviewer_name.lower()) or customer_id.lower()
+
+    new_customer = {
+        "customer_id": customer_id,
+        "name": reviewer_name,
+        "email": f"{slug}.{customer_id.lower()}@demo.local",
+        "phone": "",
+        "address": "",
+        "segment_demo": "Reviewer",
+        "source": "reviewer",
+        "created_at": datetime.now().strftime("%d/%m/%Y")
+    }
+
+    customers_collection.insert_one(new_customer)
+
+    return new_customer
+
+
+def build_customer_review_doc(book, review):
+    customer_id = review.get("customer_id", "")
+    customer = customers_collection.find_one({"customer_id": customer_id}, {"_id": 0}) if customer_id else None
+
+    if not customer:
+        customer = get_or_create_reviewer_customer(review.get("user") or review.get("customer_name"))
+
+    customer_name = customer.get("name", review.get("user", ""))
+    review_id = review.get("review_id") or f'{book.get("book_id")}_RV'
+
+    return {
+        "customer_review_id": f'{book.get("book_id")}_{review_id}',
+        "review_id": review_id,
+        "customer_id": customer.get("customer_id"),
+        "customer_name": customer_name,
+        "customer_phone": customer.get("phone", ""),
+        "customer_email": customer.get("email", ""),
+        "book_id": book.get("book_id"),
+        "book_title": book.get("title"),
+        "book_category": book.get("category"),
+        "rating": int(review.get("rating", 0) or 0),
+        "comment": review.get("comment", ""),
+        "sentiment": get_sentiment_by_rating(int(review.get("rating", 0) or 0)),
+        "review_date": review.get("created_at", ""),
+        "source": "books.reviews",
+        "updated_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    }
+
+
+def upsert_customer_review(book, review):
+    doc = build_customer_review_doc(book, review)
+
+    customer_reviews_collection.update_one(
+        {"customer_review_id": doc["customer_review_id"]},
+        {"$set": doc},
+        upsert=True
+    )
+
+    return doc
+
+
+def sync_customer_reviews_from_books():
+    """
+    Đồng bộ collection customer_reviews từ mảng books.reviews.
+    Đồng thời chuẩn hóa mỗi review để có customer_id và customer_name.
+    """
+    customer_reviews_collection.delete_many({})
+
+    synced_count = 0
+    created_customer_count = 0
+
+    for book in books_collection.find({}, {"_id": 0}):
+        reviews = book.get("reviews", [])
+        updated_reviews = []
+
+        for index, review in enumerate(reviews, start=1):
+            reviewer_name = review.get("user") or review.get("customer_name") or "Khách ẩn danh"
+            before_count = customers_collection.count_documents({})
+
+            customer = None
+            if review.get("customer_id"):
+                customer = customers_collection.find_one({"customer_id": review.get("customer_id")}, {"_id": 0})
+
+            if not customer:
+                customer = get_or_create_reviewer_customer(reviewer_name)
+
+            after_count = customers_collection.count_documents({})
+            if after_count > before_count:
+                created_customer_count += 1
+
+            review_id = review.get("review_id") or f'{book.get("book_id")}_R{index:03d}'
+
+            normalized_review = {
+                **review,
+                "review_id": review_id,
+                "customer_id": customer.get("customer_id"),
+                "customer_name": customer.get("name"),
+                "user": customer.get("name")
+            }
+
+            updated_reviews.append(normalized_review)
+            upsert_customer_review(book, normalized_review)
+            synced_count += 1
+
+        books_collection.update_one(
+            {"book_id": book.get("book_id")},
+            {"$set": {"reviews": updated_reviews}}
+        )
+
+    return {
+        "synced_count": synced_count,
+        "created_customer_count": created_customer_count
+    }
+
+
+def sync_customer_reviews_for_customer(customer_id):
+    """
+    Khi sửa khách hàng, cập nhật lại thông tin reviewer trong books.reviews
+    và collection customer_reviews.
+    """
+    customer = customers_collection.find_one({"customer_id": customer_id}, {"_id": 0})
+
+    if not customer:
+        return
+
+    for book in books_collection.find({"reviews.customer_id": customer_id}, {"_id": 0}):
+        reviews = book.get("reviews", [])
+        changed = False
+        updated_reviews = []
+
+        for review in reviews:
+            if review.get("customer_id") == customer_id:
+                review = {
+                    **review,
+                    "customer_name": customer.get("name"),
+                    "user": customer.get("name")
+                }
+                changed = True
+
+            updated_reviews.append(review)
+
+        if changed:
+            books_collection.update_one(
+                {"book_id": book.get("book_id")},
+                {"$set": {"reviews": updated_reviews}}
+            )
+
+    customer_reviews_collection.update_many(
+        {"customer_id": customer_id},
+        {"$set": {
+            "customer_name": customer.get("name"),
+            "customer_phone": customer.get("phone", ""),
+            "customer_email": customer.get("email", ""),
+            "updated_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        }}
+    )
+
+
+def get_customer_review_stats():
+    total_customer_reviews = customer_reviews_collection.count_documents({})
+    reviewer_count = len(customer_reviews_collection.distinct("customer_id"))
+
+    sentiment_counter = Counter()
+    rating_counter = Counter()
+
+    for item in customer_reviews_collection.find({}, {"_id": 0, "sentiment": 1, "rating": 1}):
+        sentiment_counter[item.get("sentiment", "Không xác định")] += 1
+        rating_counter[str(item.get("rating", 0))] += 1
+
+    return {
+        "total_customer_reviews": total_customer_reviews,
+        "reviewer_count": reviewer_count,
+        "sentiment_counter": sentiment_counter,
+        "rating_counter": rating_counter
+    }
 
 
 def generate_next_order_id():
@@ -878,6 +1151,225 @@ def get_customer_segments():
     return segments, segment_counter
 
 
+def build_rfm_customer_data():
+    """
+    Xây dựng dữ liệu RFM từ orders:
+    R - Recency: số ngày từ lần mua gần nhất
+    F - Frequency: số đơn hàng
+    M - Monetary: tổng doanh thu của khách hàng
+    """
+    orders_data = list(orders_collection.find({}, {"_id": 0}))
+
+    if not orders_data:
+        return []
+
+    max_date = None
+    for order in orders_data:
+        dt = parse_order_datetime(order.get("created_at"))
+        if dt and (max_date is None or dt > max_date):
+            max_date = dt
+
+    if max_date is None:
+        max_date = datetime.now()
+
+    customer_stats = defaultdict(lambda: {
+        "customer_id": "",
+        "customer_name": "",
+        "frequency": 0,
+        "monetary": 0,
+        "last_order_date": None
+    })
+
+    for order in orders_data:
+        customer_id = order.get("customer_id", "Không xác định")
+        stats = customer_stats[customer_id]
+        stats["customer_id"] = customer_id
+        stats["customer_name"] = order.get("customer_name", "Không xác định")
+        stats["frequency"] += 1
+        stats["monetary"] += int(order.get("total_amount", 0) or 0)
+
+        dt = parse_order_datetime(order.get("created_at"))
+        if dt and (stats["last_order_date"] is None or dt > stats["last_order_date"]):
+            stats["last_order_date"] = dt
+
+    rfm_data = []
+
+    for stats in customer_stats.values():
+        last_order_date = stats["last_order_date"]
+        recency = (max_date - last_order_date).days if last_order_date else 999
+
+        rfm_data.append({
+            "customer_id": stats["customer_id"],
+            "customer_name": stats["customer_name"],
+            "recency": recency,
+            "frequency": stats["frequency"],
+            "monetary": stats["monetary"],
+            "last_order_date": last_order_date.strftime("%Y-%m-%d") if last_order_date else ""
+        })
+
+    return rfm_data
+
+
+def evaluate_customer_clusters(selected_k=4):
+    """
+    Đánh giá phân cụm khách hàng bằng KMeans trên dữ liệu RFM.
+    Trả về:
+    - Elbow Method: inertia theo từng k
+    - Silhouette Score theo từng k
+    - Số lượng khách theo cụm
+    - Doanh thu theo cụm
+    - Giá trị trung bình R/F/M theo cụm
+    """
+    rfm_data = build_rfm_customer_data()
+    n_customers = len(rfm_data)
+
+    result = {
+        "enabled": False,
+        "message": "Cần ít nhất 3 khách hàng có đơn hàng để đánh giá phân cụm.",
+        "selected_k": selected_k,
+        "silhouette_score": None,
+        "elbow_labels": [],
+        "elbow_values": [],
+        "silhouette_labels": [],
+        "silhouette_values": [],
+        "cluster_count_labels": [],
+        "cluster_count_values": [],
+        "cluster_revenue_labels": [],
+        "cluster_revenue_values": [],
+        "avg_recency_values": [],
+        "avg_frequency_values": [],
+        "avg_monetary_values": [],
+        "cluster_summary": [],
+        "clustered_customers": []
+    }
+
+    if n_customers < 3:
+        return result
+
+    max_k = min(8, n_customers - 1)
+    min_k = 2
+
+    if selected_k < min_k:
+        selected_k = min_k
+    if selected_k > max_k:
+        selected_k = max_k
+
+    features = [
+        [
+            float(item["recency"]),
+            float(item["frequency"]),
+            float(item["monetary"])
+        ]
+        for item in rfm_data
+    ]
+
+    scaler = StandardScaler()
+    scaled_features = scaler.fit_transform(features)
+
+    elbow_labels = []
+    elbow_values = []
+    silhouette_labels = []
+    silhouette_values = []
+
+    for k in range(min_k, max_k + 1):
+        model = KMeans(n_clusters=k, random_state=42, n_init=10)
+        labels = model.fit_predict(scaled_features)
+
+        elbow_labels.append(str(k))
+        elbow_values.append(round(float(model.inertia_), 4))
+
+        if len(set(labels)) > 1 and len(set(labels)) < len(labels):
+            score = silhouette_score(scaled_features, labels)
+            silhouette_labels.append(str(k))
+            silhouette_values.append(round(float(score), 4))
+
+    final_model = KMeans(n_clusters=selected_k, random_state=42, n_init=10)
+    final_labels = final_model.fit_predict(scaled_features)
+
+    final_silhouette = None
+    if len(set(final_labels)) > 1 and len(set(final_labels)) < len(final_labels):
+        final_silhouette = round(float(silhouette_score(scaled_features, final_labels)), 4)
+
+    cluster_stats = defaultdict(lambda: {
+        "cluster": "",
+        "customer_count": 0,
+        "total_revenue": 0,
+        "total_recency": 0,
+        "total_frequency": 0,
+        "total_monetary": 0
+    })
+
+    clustered_customers = []
+
+    for item, cluster_id in zip(rfm_data, final_labels):
+        cluster_name = f"Cụm {int(cluster_id) + 1}"
+        stats = cluster_stats[cluster_name]
+        stats["cluster"] = cluster_name
+        stats["customer_count"] += 1
+        stats["total_revenue"] += item["monetary"]
+        stats["total_recency"] += item["recency"]
+        stats["total_frequency"] += item["frequency"]
+        stats["total_monetary"] += item["monetary"]
+
+        clustered_customers.append({
+            **item,
+            "cluster": cluster_name
+        })
+
+    cluster_summary = []
+    for cluster_name, stats in sorted(cluster_stats.items()):
+        count = stats["customer_count"] or 1
+        avg_recency = round(stats["total_recency"] / count, 2)
+        avg_frequency = round(stats["total_frequency"] / count, 2)
+        avg_monetary = round(stats["total_monetary"] / count, 2)
+
+        if avg_frequency >= 3 and avg_monetary >= 700000:
+            interpretation = "Khách hàng trung thành / giá trị cao"
+        elif avg_recency <= 30:
+            interpretation = "Khách hàng mới hoặc vừa mua gần đây"
+        elif avg_monetary >= 700000:
+            interpretation = "Khách hàng chi tiêu cao nhưng tần suất chưa ổn định"
+        else:
+            interpretation = "Khách hàng phổ thông / cần kích hoạt lại"
+
+        cluster_summary.append({
+            "cluster": cluster_name,
+            "customer_count": stats["customer_count"],
+            "total_revenue": stats["total_revenue"],
+            "avg_recency": avg_recency,
+            "avg_frequency": avg_frequency,
+            "avg_monetary": avg_monetary,
+            "interpretation": interpretation
+        })
+
+    clustered_customers = sorted(
+        clustered_customers,
+        key=lambda x: (x["cluster"], -x["monetary"], -x["frequency"])
+    )
+
+    result.update({
+        "enabled": True,
+        "message": "",
+        "selected_k": selected_k,
+        "silhouette_score": final_silhouette,
+        "elbow_labels": elbow_labels,
+        "elbow_values": elbow_values,
+        "silhouette_labels": silhouette_labels,
+        "silhouette_values": silhouette_values,
+        "cluster_count_labels": [item["cluster"] for item in cluster_summary],
+        "cluster_count_values": [item["customer_count"] for item in cluster_summary],
+        "cluster_revenue_labels": [item["cluster"] for item in cluster_summary],
+        "cluster_revenue_values": [item["total_revenue"] for item in cluster_summary],
+        "avg_recency_values": [item["avg_recency"] for item in cluster_summary],
+        "avg_frequency_values": [item["avg_frequency"] for item in cluster_summary],
+        "avg_monetary_values": [item["avg_monetary"] for item in cluster_summary],
+        "cluster_summary": cluster_summary,
+        "clustered_customers": clustered_customers[:50]
+    })
+
+    return result
+
+
 def get_sales_mining_summary():
     orders_data = list(orders_collection.find({}, {"_id": 0}))
     book_counter = Counter()
@@ -904,6 +1396,89 @@ def get_sales_mining_summary():
         "top_revenue_books": book_revenue.most_common(10),
         "status_counter": status_counter,
         "monthly_revenue": sorted(monthly_revenue.items())
+    }
+
+
+def get_customer_purchase_behavior():
+    """
+    Phân tích hành vi mua hàng:
+    - Top khách hàng theo doanh thu
+    - Top khách hàng theo số đơn
+    - Giá trị đơn hàng trung bình
+    - Số sản phẩm trung bình / đơn
+    - Tỷ lệ khách mua lặp lại
+    - Số lượng mua theo thể loại
+    """
+    orders_data = list(orders_collection.find({}, {"_id": 0}))
+
+    customer_order_counter = Counter()
+    customer_revenue_counter = Counter()
+    customer_name_map = {}
+    category_purchase_counter = Counter()
+
+    total_revenue = 0
+    total_items = 0
+    total_orders = len(orders_data)
+
+    book_category_map = {}
+    for book in books_collection.find({}, {"_id": 0, "book_id": 1, "category": 1}):
+        book_category_map[book.get("book_id")] = book.get("category", "Không xác định")
+
+    for order in orders_data:
+        customer_id = order.get("customer_id", "Không xác định")
+        customer_name = order.get("customer_name", "Không xác định")
+        order_amount = int(order.get("total_amount", 0) or 0)
+
+        customer_order_counter[customer_id] += 1
+        customer_revenue_counter[customer_id] += order_amount
+        customer_name_map[customer_id] = customer_name
+        total_revenue += order_amount
+
+        for item in order.get("items", []):
+            quantity = int(item.get("quantity", 0) or 0)
+            total_items += quantity
+
+            book_id = item.get("book_id")
+            category = book_category_map.get(book_id, "Không xác định")
+            category_purchase_counter[category] += quantity
+
+    unique_buyers = len(customer_order_counter)
+    repeat_customers = sum(1 for count in customer_order_counter.values() if count >= 2)
+
+    avg_order_value = round(total_revenue / total_orders, 2) if total_orders else 0
+    avg_items_per_order = round(total_items / total_orders, 2) if total_orders else 0
+    repeat_rate = round((repeat_customers / unique_buyers) * 100, 2) if unique_buyers else 0
+
+    top_customers_by_revenue = []
+    for customer_id, revenue in customer_revenue_counter.most_common(10):
+        top_customers_by_revenue.append({
+            "customer_id": customer_id,
+            "customer_name": customer_name_map.get(customer_id, "Không xác định"),
+            "total_revenue": revenue,
+            "order_count": customer_order_counter.get(customer_id, 0)
+        })
+
+    top_customers_by_orders = []
+    for customer_id, order_count in customer_order_counter.most_common(10):
+        top_customers_by_orders.append({
+            "customer_id": customer_id,
+            "customer_name": customer_name_map.get(customer_id, "Không xác định"),
+            "order_count": order_count,
+            "total_revenue": customer_revenue_counter.get(customer_id, 0)
+        })
+
+    return {
+        "total_revenue": total_revenue,
+        "total_orders": total_orders,
+        "total_items": total_items,
+        "unique_buyers": unique_buyers,
+        "repeat_customers": repeat_customers,
+        "repeat_rate": repeat_rate,
+        "avg_order_value": avg_order_value,
+        "avg_items_per_order": avg_items_per_order,
+        "top_customers_by_revenue": top_customers_by_revenue,
+        "top_customers_by_orders": top_customers_by_orders,
+        "category_purchase": category_purchase_counter.most_common()
     }
 
 
@@ -1031,24 +1606,69 @@ def sync_customer_orders_for_customer(customer_id):
 def customers():
     keyword = request.args.get("keyword", "").strip()
 
+    try:
+        page = int(request.args.get("page", 1))
+    except ValueError:
+        page = 1
+
+    try:
+        per_page = int(request.args.get("per_page", 10))
+    except ValueError:
+        per_page = 10
+
+    allowed_per_pages = [10, 20, 50, 100]
+    if per_page not in allowed_per_pages:
+        per_page = 10
+
     query = {}
     if keyword:
         regex = {"$regex": keyword, "$options": "i"}
         query["$or"] = [
             {"customer_id": regex},
             {"name": regex},
-            {"email": regex},
             {"phone": regex},
-            {"address": regex}
+            {"email": regex},
+            {"address": regex},
+            {"segment_demo": regex}
         ]
 
-    customers_data = list(customers_collection.find(query, {"_id": 0}).sort("customer_id", 1))
+    total_customers = customers_collection.count_documents(query)
+    total_pages = math.ceil(total_customers / per_page) if total_customers > 0 else 1
+
+    if page < 1:
+        page = 1
+    if page > total_pages:
+        page = total_pages
+
+    skip_customers = (page - 1) * per_page
+
+    customers_data = list(
+        customers_collection
+        .find(query, {"_id": 0})
+        .sort("customer_id", 1)
+        .skip(skip_customers)
+        .limit(per_page)
+    )
+
+    for customer in customers_data:
+        customer_id = customer.get("customer_id")
+        customer["order_count"] = orders_collection.count_documents({"customer_id": customer_id})
+        customer["review_count"] = customer_reviews_collection.count_documents({"customer_id": customer_id})
+
+    start_index = skip_customers + 1 if total_customers > 0 else 0
+    end_index = min(skip_customers + per_page, total_customers)
 
     return render_template(
         "customers.html",
         customers=customers_data,
         keyword=keyword,
-        total_customers=len(customers_data)
+        total_customers=total_customers,
+        page=page,
+        per_page=per_page,
+        total_pages=total_pages,
+        start_index=start_index,
+        end_index=end_index,
+        allowed_per_pages=allowed_per_pages
     )
 
 
@@ -1122,6 +1742,7 @@ def edit_customer(customer_id):
         )
 
         sync_customer_orders_for_customer(customer_id)
+        sync_customer_reviews_for_customer(customer_id)
 
         return redirect(url_for("customers"))
 
@@ -1136,9 +1757,10 @@ def edit_customer(customer_id):
 @app.route("/delete-customer/<customer_id>", methods=["POST"])
 def delete_customer(customer_id):
     orders_count = orders_collection.count_documents({"customer_id": customer_id})
+    reviews_count = customer_reviews_collection.count_documents({"customer_id": customer_id})
 
-    if orders_count > 0:
-        return "Không thể xóa khách hàng vì đã có đơn hàng liên quan.", 400
+    if orders_count > 0 or reviews_count > 0:
+        return "Không thể xóa khách hàng vì đã có đơn hàng hoặc review liên quan.", 400
 
     customers_collection.delete_one({"customer_id": customer_id})
     return redirect(url_for("customers"))
@@ -1186,8 +1808,6 @@ def orders():
         end_index=pagination["end_index"],
         allowed_per_pages=pagination["allowed_per_pages"]
     )
-
-
 
 
 def parse_order_items_from_form():
@@ -1522,6 +2142,109 @@ def customer_orders():
         allowed_per_pages=pagination["allowed_per_pages"]
     )
 
+
+
+
+@app.route("/sync-customer-reviews")
+def sync_customer_reviews():
+    result = sync_customer_reviews_from_books()
+
+    return redirect(url_for("customer_reviews"))
+
+
+@app.route("/customer-reviews")
+def customer_reviews():
+    keyword = request.args.get("keyword", "").strip()
+    sentiment = request.args.get("sentiment", "").strip()
+    rating = request.args.get("rating", "").strip()
+
+    try:
+        page = int(request.args.get("page", 1))
+    except ValueError:
+        page = 1
+
+    try:
+        per_page = int(request.args.get("per_page", 10))
+    except ValueError:
+        per_page = 10
+
+    allowed_per_pages = [10, 20, 50, 100]
+
+    if per_page not in allowed_per_pages:
+        per_page = 10
+
+    query = {}
+
+    if sentiment:
+        query["sentiment"] = sentiment
+
+    if rating:
+        try:
+            query["rating"] = int(rating)
+        except ValueError:
+            pass
+
+    if keyword:
+        regex = {"$regex": keyword, "$options": "i"}
+        query["$or"] = [
+            {"customer_review_id": regex},
+            {"review_id": regex},
+            {"customer_id": regex},
+            {"customer_name": regex},
+            {"customer_phone": regex},
+            {"customer_email": regex},
+            {"book_id": regex},
+            {"book_title": regex},
+            {"book_category": regex},
+            {"comment": regex}
+        ]
+
+    total_customer_reviews = customer_reviews_collection.count_documents(query)
+    total_pages = math.ceil(total_customer_reviews / per_page) if total_customer_reviews > 0 else 1
+
+    if page < 1:
+        page = 1
+
+    if page > total_pages:
+        page = total_pages
+
+    skip_reviews = (page - 1) * per_page
+
+    customer_reviews_data = list(
+        customer_reviews_collection
+        .find(query, {"_id": 0})
+        .sort("review_date", -1)
+        .skip(skip_reviews)
+        .limit(per_page)
+    )
+
+    start_index = skip_reviews + 1 if total_customer_reviews > 0 else 0
+    end_index = min(skip_reviews + per_page, total_customer_reviews)
+
+    stats = get_customer_review_stats()
+    sentiments = ["Tích cực", "Trung lập", "Tiêu cực"]
+
+    return render_template(
+        "customer_reviews.html",
+        customer_reviews=customer_reviews_data,
+        keyword=keyword,
+        selected_sentiment=sentiment,
+        selected_rating=rating,
+        sentiments=sentiments,
+        total_customer_reviews=total_customer_reviews,
+        total_all_customer_reviews=stats["total_customer_reviews"],
+        reviewer_count=stats["reviewer_count"],
+        sentiment_labels=list(stats["sentiment_counter"].keys()),
+        sentiment_values=list(stats["sentiment_counter"].values()),
+        rating_labels=list(stats["rating_counter"].keys()),
+        rating_values=list(stats["rating_counter"].values()),
+        page=page,
+        per_page=per_page,
+        total_pages=total_pages,
+        start_index=start_index,
+        end_index=end_index,
+        allowed_per_pages=allowed_per_pages
+    )
 
 @app.route("/data-mining")
 def data_mining():

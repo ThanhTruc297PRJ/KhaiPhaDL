@@ -1,239 +1,121 @@
-<!DOCTYPE html>
-<html lang="vi">
-<head>
-    <meta charset="UTF-8">
-    <title>Danh sách sách</title>
-    <style>
-        * { box-sizing: border-box; }
-        body { margin: 0; font-family: Arial, sans-serif; background-color: #f4f6f8; color: #111827; }
-        .container { width: 92%; margin: 20px auto; }
-        .nav { display: flex; gap: 10px; margin-bottom: 16px; align-items: center; flex-wrap: wrap; }
-        .nav a { color: white; padding: 10px 18px; border-radius: 8px; text-decoration: none; font-weight: bold; font-size: 14px; }
-        .nav .home { background-color: #16a34a; }
-        .nav .analytics { background-color: #2563eb; }
-        .nav .add { background-color: #111827; }
-        h1 { font-size: 26px; margin-bottom: 14px; color: #1f2937; }
-        .search-box { background-color: white; padding: 14px; border-radius: 12px; box-shadow: 0 3px 12px rgba(0,0,0,.07); margin-bottom: 16px; }
-        .search-title { font-size: 18px; font-weight: bold; color: #1f2937; margin-bottom: 12px; }
-        .search-form { display: grid; grid-template-columns: 2fr 1fr 1fr auto auto; gap: 10px; align-items: end; }
-        .form-group label { display: block; font-size: 12px; font-weight: bold; margin-bottom: 5px; color: #374151; }
-        .form-group input, .form-group select { width: 100%; padding: 9px 11px; border: 1px solid #d1d5db; border-radius: 8px; outline: none; font-size: 13px; }
-        .btn-search, .btn-reset { border: none; padding: 9px 16px; border-radius: 8px; font-weight: bold; cursor: pointer; height: 37px; font-size: 13px; text-decoration: none; display: inline-flex; align-items: center; justify-content: center; }
-        .btn-search { background-color: #f97316; color: white; }
-        .btn-search:hover { background-color: #ea580c; }
-        .btn-reset { background: #6b7280; color: white; }
-        .btn-reset:hover { background: #4b5563; }
-        .table-box { background-color: white; padding: 12px; border-radius: 12px; box-shadow: 0 3px 12px rgba(0,0,0,.07); overflow-x: auto; }
-        .info-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; color: #374151; font-size: 14px; font-weight: 600; gap: 10px; flex-wrap: wrap; }
-        table { width: 100%; min-width: 1050px; border-collapse: collapse; background-color: white; font-size: 13px; }
-        th { background-color: #16a34a; color: white; padding: 10px 8px; border: 1px solid #e5e7eb; text-align: center; white-space: nowrap; }
-        td { padding: 8px 8px; border: 1px solid #e5e7eb; vertical-align: middle; }
-        tr:nth-child(even) { background-color: #f9fafb; }
-        tr:hover { background-color: #eef6ff; }
-        .book-link { color: #2563eb; text-decoration: none; font-weight: bold; }
-        .book-link:hover { text-decoration: underline; }
-        .price, .date-cell, .review-count { white-space: nowrap; text-align: center; }
-        .review-count { font-weight: bold; }
-        .tag { display: inline-block; background-color: #dcfce7; color: #15803d; padding: 4px 7px; border-radius: 6px; font-size: 12px; margin: 2px 1px; white-space: nowrap; }
-        .actions { display: flex; flex-direction: column; gap: 5px; min-width: 105px; }
-        .action-link, .action-btn { display: block; width: 100%; padding: 5px 6px; border-radius: 6px; text-decoration: none; border: none; cursor: pointer; font-size: 12px; font-weight: bold; text-align: left; background-color: transparent; font-family: Arial, sans-serif; }
-        .detail { color: #0f766e; } .edit { color: #2563eb; } .delete { color: #dc2626; }
-        .action-link:hover, .action-btn:hover { background-color: #f3f4f6; }
-        .delete-form { margin: 0; }
-        .empty { text-align: center; padding: 22px; color: #6b7280; font-weight: bold; font-size: 14px; }
-        .pagination { margin-top: 18px; text-align: center; }
-        .pagination button { display: inline-block; padding: 7px 11px; margin: 2px; border-radius: 7px; text-decoration: none; font-weight: 600; border: 1px solid #d1d5db; font-size: 13px; color: #2563eb; background: white; cursor: pointer; }
-        .pagination button:hover { background-color: #2563eb; color: white; }
-        .pagination .active { background-color: #16a34a; color: white; border-color: #16a34a; }
-        .pagination .disabled { color: #9ca3af; background-color: #f3f4f6; cursor: not-allowed; }
-        .loading { color: #f97316; font-weight: bold; }
-        @media (max-width: 1200px) { .container { width: 96%; } .search-form { grid-template-columns: 1fr; } table { font-size: 12px; min-width: 1000px; } }
-    </style>
-</head>
-<body>
-<div class="container">
-    <div class="nav">
-        <a class="home" href="{{ url_for('home') }}">Trang chủ</a>
-        <a class="analytics" href="{{ url_for('analytics') }}">Phân tích dữ liệu</a>
-        <a class="add" href="{{ url_for('add_book') }}">Thêm mới</a>
+{% extends "base.html" %}
+{% block title %}Quản lý sách{% endblock %}
+
+{% block content %}
+<h4 class="page-title">Quản lý sách</h4>
+
+<div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center flex-wrap">
+        <div>
+            <div class="card-title">Danh sách sách</div>
+            <p class="card-category">Tìm kiếm theo tên, tác giả, thể loại, tag hoặc nội dung review</p>
+        </div>
+        <a class="btn btn-primary" href="{{ url_for('add_book') }}"><i class="la la-plus"></i> Thêm sách</a>
     </div>
 
-    <h1>Danh sách sách trong MongoDB</h1>
-
-    <div class="search-box">
-        <div class="search-title">Tìm kiếm dữ liệu sách và bình luận đánh giá không reload trang</div>
-        <form id="bookSearchForm" class="search-form" method="GET" action="{{ url_for('books') }}">
-            <div class="form-group">
+    <div class="card-body">
+        <form method="GET" action="{{ url_for('books') }}" class="row">
+            <div class="col-md-4 mb-2">
                 <label>Từ khóa</label>
-                <input type="text" name="keyword" value="{{ keyword }}" placeholder="Nhập tên sách, tác giả, tag hoặc nội dung bình luận...">
+                <input class="form-control" name="keyword" value="{{ keyword }}" placeholder="Nhập từ khóa tìm kiếm...">
             </div>
-            <div class="form-group">
-                <label>Loại tìm kiếm</label>
-                <select name="search_type">
-                    <option value="all" {% if search_type == "all" %}selected{% endif %}>Tất cả</option>
-                    <option value="title" {% if search_type == "title" %}selected{% endif %}>Tên sách</option>
-                    <option value="author" {% if search_type == "author" %}selected{% endif %}>Tác giả</option>
-                    <option value="tag" {% if search_type == "tag" %}selected{% endif %}>Tag</option>
-                    <option value="review" {% if search_type == "review" %}selected{% endif %}>Bình luận đánh giá</option>
+            <div class="col-md-3 mb-2">
+                <label>Kiểu tìm kiếm</label>
+                <select class="form-control" name="search_type">
+                    <option value="all" {% if search_type == 'all' %}selected{% endif %}>Tất cả</option>
+                    <option value="title" {% if search_type == 'title' %}selected{% endif %}>Tên sách</option>
+                    <option value="author" {% if search_type == 'author' %}selected{% endif %}>Tác giả</option>
+                    <option value="tag" {% if search_type == 'tag' %}selected{% endif %}>Từ khóa</option>
+                    <option value="review" {% if search_type == 'review' %}selected{% endif %}>Đánh giá</option>
                 </select>
             </div>
-            <div class="form-group">
+            <div class="col-md-3 mb-2">
                 <label>Thể loại</label>
-                <select name="category">
+                <select class="form-control" name="category">
                     <option value="">Tất cả</option>
-                    {% for cate in categories %}
-                        <option value="{{ cate }}" {% if selected_category == cate %}selected{% endif %}>{{ cate }}</option>
+                    {% for cat in categories %}
+                    <option value="{{ cat }}" {% if selected_category == cat %}selected{% endif %}>{{ cat }}</option>
                     {% endfor %}
                 </select>
             </div>
-            <button class="btn-search" type="submit">Tìm kiếm</button>
-            <button class="btn-reset" type="button" id="resetSearchBtn">Xóa lọc</button>
+            <div class="col-md-2 mb-2 d-flex align-items-end">
+                <button class="btn btn-success mr-2" type="submit"><i class="la la-search"></i></button>
+                <a class="btn btn-secondary" href="{{ url_for('books') }}">Khôi phục</a>
+            </div>
         </form>
     </div>
+</div>
 
-    <div class="table-box">
-        <div class="info-row">
-            <div id="bookInfoText">Hiển thị {{ start_index }} - {{ end_index }} / {{ total_books }} sách</div>
-            <div id="pageInfoText">Trang {{ page }} / {{ total_pages }}</div>
-        </div>
-
-        <table>
-            <thead>
+<div class="card">
+    <div class="card-header">
+        <div class="card-title">Kết quả</div>
+        <p class="card-category">Hiển thị {{ start_index }} - {{ end_index }} / {{ total_books }} sách</p>
+    </div>
+    <div class="card-body">
+        {% if books %}
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
                 <tr>
-                    <th>Mã sách</th><th>Tên sách</th><th>Tác giả</th><th>Thể loại</th><th>Giá</th><th>Tags</th><th>Số đánh giá</th><th>Ngày nhập</th><th>Tùy chọn</th>
+                    <th>Mã</th>
+                    <th>Tên sách</th>
+                    <th>Tác giả</th>
+                    <th>Thể loại</th>
+                    <th>Giá</th>
+                    <th>Từ khóa</th>
+                    <th>Đánh giá</th>
+                    <th>Tùy chọn</th>
                 </tr>
-            </thead>
-            <tbody id="booksTableBody">
+                </thead>
+                <tbody>
                 {% for book in books %}
                 <tr>
-                    <td>{{ book.book_id }}</td>
-                    <td><a class="book-link" href="{{ url_for('book_detail', book_id=book.book_id) }}">{{ book.title }}</a></td>
+                    <td><b>{{ book.book_id }}</b></td>
+                    <td><a href="{{ url_for('book_detail', book_id=book.book_id) }}"><b>{{ book.title }}</b></a></td>
                     <td>{{ book.author }}</td>
-                    <td>{{ book.category }}</td>
-                    <td class="price">{{ "{:,.0f}".format(book.price) }} VNĐ</td>
-                    <td>{% for tag in book.tags %}<span class="tag">{{ tag }}</span>{% endfor %}</td>
-                    <td class="review-count">{{ book.reviews|length }}</td>
-                    <td class="date-cell">{% if book.created_at %}{{ book.created_at }}{% elif book.ngay_nhap %}{{ book.ngay_nhap }}{% else %}20/05/2026{% endif %}</td>
+                    <td><span class="badge badge-info">{{ book.category }}</span></td>
+                    <td class="money">{{ "{:,.0f}".format(book.price) }} VNĐ</td>
                     <td>
-                        <div class="actions">
-                            <a class="action-link detail" href="{{ url_for('book_detail', book_id=book.book_id) }}">ℹ Chi tiết</a>
-                            <a class="action-link edit" href="{{ url_for('edit_book', book_id=book.book_id) }}">✎ Chỉnh sửa</a>
-                            <form class="delete-form" method="POST" action="{{ url_for('delete_book', book_id=book.book_id) }}" onsubmit="return confirm('Bạn có chắc muốn xóa sách này không?');"><button class="action-btn delete" type="submit">🗑 Xóa</button></form>
+                        {% for tag in book.get("tags", [])[:3] %}
+                        <span class="badge badge-light">{{ tag }}</span>
+                        {% endfor %}
+                    </td>
+                    <td>{{ book.get("reviews", [])|length }}</td>
+                    <td>
+                        <div class="btn-group">
+                            <a class="btn btn-sm btn-info" href="{{ url_for('book_detail', book_id=book.book_id) }}">Xem</a>
+                            <a class="btn btn-sm btn-primary" href="{{ url_for('edit_book', book_id=book.book_id) }}">Sửa</a>
+                            <form method="POST" action="{{ url_for('delete_book', book_id=book.book_id) }}" onsubmit="return confirm('Xóa sách này?');">
+                                <button class="btn btn-sm btn-danger" type="submit">Xóa</button>
+                            </form>
                         </div>
                     </td>
                 </tr>
                 {% endfor %}
-            </tbody>
-        </table>
+                </tbody>
+            </table>
+        </div>
 
-        <div id="paginationBox" class="pagination"></div>
+        <nav>
+            <ul class="pagination justify-content-end">
+                {% if page > 1 %}
+                <li class="page-item"><a class="page-link" href="{{ url_for('books', keyword=keyword, search_type=search_type, category=selected_category, page=page-1) }}">Trước</a></li>
+                {% endif %}
+                {% for p in range(1, total_pages + 1) %}
+                    {% if p == page %}
+                    <li class="page-item active"><span class="page-link">{{ p }}</span></li>
+                    {% elif p >= page - 2 and p <= page + 2 %}
+                    <li class="page-item"><a class="page-link" href="{{ url_for('books', keyword=keyword, search_type=search_type, category=selected_category, page=p) }}">{{ p }}</a></li>
+                    {% endif %}
+                {% endfor %}
+                {% if page < total_pages %}
+                <li class="page-item"><a class="page-link" href="{{ url_for('books', keyword=keyword, search_type=search_type, category=selected_category, page=page+1) }}">Sau</a></li>
+                {% endif %}
+            </ul>
+        </nav>
+        {% else %}
+        <div class="alert alert-warning">Không tìm thấy sách phù hợp.</div>
+        {% endif %}
     </div>
 </div>
-
-<script>
-let currentPage = {{ page }};
-
-function escapeHtml(value) {
-    return String(value ?? "")
-        .replaceAll("&", "&amp;")
-        .replaceAll("<", "&lt;")
-        .replaceAll(">", "&gt;")
-        .replaceAll('"', "&quot;")
-        .replaceAll("'", "&#039;");
-}
-
-function bookRow(book) {
-    const tags = (book.tags || []).map(tag => `<span class="tag">${escapeHtml(tag)}</span>`).join("");
-    return `
-        <tr>
-            <td>${escapeHtml(book.book_id)}</td>
-            <td><a class="book-link" href="/book/${encodeURIComponent(book.book_id)}">${escapeHtml(book.title)}</a></td>
-            <td>${escapeHtml(book.author)}</td>
-            <td>${escapeHtml(book.category)}</td>
-            <td class="price">${escapeHtml(book.price_text)}</td>
-            <td>${tags}</td>
-            <td class="review-count">${book.review_count || 0}</td>
-            <td class="date-cell">${escapeHtml(book.created_text)}</td>
-            <td>
-                <div class="actions">
-                    <a class="action-link detail" href="/book/${encodeURIComponent(book.book_id)}">ℹ Chi tiết</a>
-                    <a class="action-link edit" href="/edit-book/${encodeURIComponent(book.book_id)}">✎ Chỉnh sửa</a>
-                    <form class="delete-form" method="POST" action="/delete-book/${encodeURIComponent(book.book_id)}" onsubmit="return confirm('Bạn có chắc muốn xóa sách này không?');">
-                        <button class="action-btn delete" type="submit">🗑 Xóa</button>
-                    </form>
-                </div>
-            </td>
-        </tr>
-    `;
-}
-
-function renderPagination(data) {
-    const box = document.getElementById("paginationBox");
-    let html = "";
-    if (data.page > 1) {
-        html += `<button type="button" data-page="${data.page - 1}">← Trước</button>`;
-    } else {
-        html += `<button type="button" class="disabled" disabled>← Trước</button>`;
-    }
-    for (let p = 1; p <= data.total_pages; p++) {
-        if (p === data.page) {
-            html += `<button type="button" class="active" data-page="${p}">${p}</button>`;
-        } else if (p <= 3 || p > data.total_pages - 3 || Math.abs(p - data.page) <= 1) {
-            html += `<button type="button" data-page="${p}">${p}</button>`;
-        } else if (p === 4 || p === data.total_pages - 3) {
-            html += `<button type="button" class="disabled" disabled>...</button>`;
-        }
-    }
-    if (data.page < data.total_pages) {
-        html += `<button type="button" data-page="${data.page + 1}">Sau →</button>`;
-    } else {
-        html += `<button type="button" class="disabled" disabled>Sau →</button>`;
-    }
-    box.innerHTML = html;
-}
-
-async function loadBooks(page = 1) {
-    currentPage = page;
-    const form = document.getElementById("bookSearchForm");
-    const params = new URLSearchParams(new FormData(form));
-    params.set("page", page);
-    document.getElementById("bookInfoText").innerHTML = '<span class="loading">Đang tìm kiếm...</span>';
-    const response = await fetch(`/api/books-search?${params.toString()}`);
-    const data = await response.json();
-
-    const tbody = document.getElementById("booksTableBody");
-    tbody.innerHTML = data.books.length
-        ? data.books.map(bookRow).join("")
-        : `<tr><td colspan="9"><div class="empty">Không tìm thấy sách phù hợp.</div></td></tr>`;
-
-    document.getElementById("bookInfoText").textContent = `Hiển thị ${data.start_index} - ${data.end_index} / ${data.total_books} sách`;
-    document.getElementById("pageInfoText").textContent = `Trang ${data.page} / ${data.total_pages}`;
-    renderPagination(data);
-
-    const newUrl = `${window.location.pathname}?${params.toString()}`;
-    window.history.replaceState({}, "", newUrl);
-}
-
-document.getElementById("bookSearchForm").addEventListener("submit", function (event) {
-    event.preventDefault();
-    loadBooks(1);
-});
-
-document.getElementById("resetSearchBtn").addEventListener("click", function () {
-    const form = document.getElementById("bookSearchForm");
-    form.keyword.value = "";
-    form.search_type.value = "all";
-    form.category.value = "";
-    loadBooks(1);
-});
-
-document.getElementById("paginationBox").addEventListener("click", function (event) {
-    const btn = event.target.closest("button[data-page]");
-    if (!btn) return;
-    loadBooks(Number(btn.dataset.page));
-});
-
-renderPagination({ page: {{ page }}, total_pages: {{ total_pages }} });
-</script>
-</body>
-</html>
+{% endblock %}

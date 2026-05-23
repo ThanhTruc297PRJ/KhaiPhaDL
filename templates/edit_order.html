@@ -1,139 +1,102 @@
-<!DOCTYPE html>
-<html lang="vi">
-<head>
-<meta charset="UTF-8">
-<title>Sửa đơn hàng</title>
-<style>*{box-sizing:border-box}body{margin:0;font-family:Arial,sans-serif;background:#f4f6f8;color:#111827}.container{width:92%;margin:24px auto}.nav{display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap}.nav a,.btn,a.btn{background:#16a34a;color:white;text-decoration:none;padding:9px 14px;border-radius:8px;font-weight:bold;border:none;cursor:pointer;font-size:14px}.nav .blue,.btn.blue{background:#2563eb}.nav .dark,.btn.dark{background:#111827}.nav .orange,.btn.orange{background:#f97316}.nav .gray,.btn.gray{background:#6b7280}.btn.red{background:#dc2626}h1{font-size:26px;color:#1f2937}.card{background:white;padding:16px;border-radius:12px;box-shadow:0 3px 12px rgba(0,0,0,.07);margin-bottom:16px}.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;align-items:end}.full{grid-column:1/3}label{display:block;font-weight:bold;font-size:13px;margin-bottom:6px;color:#374151}input,select,textarea{width:100%;padding:10px;border:1px solid #d1d5db;border-radius:8px;font-size:14px}textarea{min-height:90px}.error{background:#fee2e2;color:#b91c1c;padding:11px;border-radius:8px;font-weight:bold;margin-bottom:12px}.actions{display:flex;gap:8px;flex-wrap:wrap;align-items:center}.money{white-space:nowrap;text-align:right;font-weight:bold;color:#dc2626}.muted{color:#6b7280;font-size:13px}.item-row{display:grid;grid-template-columns:2fr 120px auto;gap:10px;align-items:end;margin-bottom:10px;padding:10px;border:1px solid #e5e7eb;border-radius:10px;background:#f9fafb}.item-title{font-weight:bold;margin-bottom:10px;color:#1f2937}.summary-box{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:10px}.summary-card{background:#f9fafb;border:1px solid #e5e7eb;border-radius:10px;padding:10px}.summary-card b{display:block;color:#15803d;font-size:18px}@media(max-width:900px){.container{width:96%}.form-grid,.item-row,.summary-box{grid-template-columns:1fr}.full{grid-column:1/2}}</style>
-</head>
-<body>
-<div class="container">
-<div class="nav"><a href="/">Trang chủ</a><a class="blue" href="/books">Sách</a><a class="dark" href="/customers">Khách hàng</a><a class="orange" href="/orders">Đơn hàng</a><a class="dark" href="/customer-orders">Customer Orders</a><a class="blue" href="/analytics">Phân tích</a></div>
+{% extends "base.html" %}
+{% block title %}Sửa đơn hàng{% endblock %}
 
-<h1>Cập nhật đơn hàng: {{ order.order_id }}</h1>
+{% block content %}
+<h4 class="page-title">Cập nhật đơn hàng: {{ order.order_id }}</h4>
 
 <div class="card">
-    {% if error %}<div class="error">{{ error }}</div>{% endif %}
-
-    <div class="summary-box">
-        <div class="summary-card">
-            <b>{{ order.order_id }}</b>
-            <span>Mã đơn hàng</span>
-        </div>
-        <div class="summary-card">
-            <b>{{ "{:,.0f}".format(order.total_amount) }}</b>
-            <span>Tổng tiền hiện tại</span>
-        </div>
-        <div class="summary-card">
-            <b>{{ order.created_at }}</b>
-            <span>Ngày tạo</span>
-        </div>
+    <div class="card-header">
+        <div class="card-title">Sửa thông tin đơn hàng</div>
+        <p class="card-category">Một đơn hàng có thể gồm nhiều sản phẩm</p>
     </div>
+    <div class="card-body">
+        {% if error %}<div class="alert alert-danger">{{ error }}</div>{% endif %}
 
-    <form method="POST" action="{{ url_for('edit_order', order_id=order.order_id) }}" style="margin-top:14px">
-        <div class="form-grid">
-            <div>
-                <label>Khách hàng</label>
-                <select name="customer_id" required>
-                    <option value="">-- Chọn khách hàng --</option>
-                    {% for c in customers %}
-                    <option value="{{ c.customer_id }}" {% if form_data.get('customer_id', order.customer_id) == c.customer_id %}selected{% endif %}>
-                        {{ c.customer_id }} - {{ c.name }}
-                    </option>
-                    {% endfor %}
-                </select>
-            </div>
-
-            <div>
-                <label>Trạng thái</label>
-                <select name="status">
-                    {% for st in status_list %}
-                    <option value="{{ st }}" {% if form_data.get('status', order.status) == st %}selected{% endif %}>
-                        {{ st }}
-                    </option>
-                    {% endfor %}
-                </select>
-            </div>
-
-            <div class="full">
-                <label>Ghi chú</label>
-                <textarea name="note">{{ form_data.get('note', order.note | default('')) }}</textarea>
-            </div>
-        </div>
-
-        <div class="card" style="box-shadow:none;border:1px solid #e5e7eb;margin-top:14px">
-            <div class="item-title">Danh sách sản phẩm trong đơn</div>
-
-            <div id="items-wrapper">
-                {% for item in current_items %}
-                <div class="item-row">
-                    <div>
-                        <label>Sách</label>
-                        <select name="book_id[]" required>
-                            <option value="">-- Chọn sách --</option>
-                            {% for b in books %}
-                            <option value="{{ b.book_id }}" {% if item.book_id == b.book_id %}selected{% endif %}>
-                                {{ b.book_id }} - {{ b.title }} - {{ "{:,.0f}".format(b.price) }} VNĐ
-                            </option>
-                            {% endfor %}
-                        </select>
-                    </div>
-
-                    <div>
-                        <label>Số lượng</label>
-                        <input type="number" name="quantity[]" min="1" value="{{ item.quantity | default(1) }}" required>
-                    </div>
-
-                    <div>
-                        <button class="btn red" type="button" onclick="removeItem(this)">Xóa</button>
-                    </div>
+        <form method="POST" action="{{ url_for('edit_order', order_id=order.order_id) }}">
+            <div class="row">
+                <div class="col-md-6 form-group">
+                    <label>Khách hàng</label>
+                    <select class="form-control" name="customer_id" required>
+                        <option value="">-- Chọn khách hàng --</option>
+                        {% for c in customers %}
+                        <option value="{{ c.customer_id }}" {% if form_data.get('customer_id', order.customer_id) == c.customer_id %}selected{% endif %}>
+                            {{ c.customer_id }} - {{ c.name }}
+                        </option>
+                        {% endfor %}
+                    </select>
                 </div>
-                {% endfor %}
+
+                <div class="col-md-6 form-group">
+                    <label>Trạng thái</label>
+                    <select class="form-control" name="status">
+                        {% for st in status_list %}
+                        <option value="{{ st }}" {% if form_data.get('status', order.status) == st %}selected{% endif %}>{{ st }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="col-md-12 form-group">
+                    <label>Ghi chú</label>
+                    <textarea class="form-control" name="note" rows="3">{{ form_data.get('note', order.note | default('')) }}</textarea>
+                </div>
             </div>
 
-            <button class="btn blue" type="button" onclick="addItem()">+ Thêm sản phẩm</button>
-        </div>
+            <div class="card bg-light">
+                <div class="card-body">
+                    <h5 class="card-title">Danh sách sản phẩm</h5>
+                    <div id="items-wrapper">
+                        {% for item in current_items %}
+                        <div class="item-row">
+                            <div>
+                                <label>Sách</label>
+                                <select class="form-control" name="book_id[]" required>
+                                    <option value="">-- Chọn sách --</option>
+                                    {% for b in books %}
+                                    <option value="{{ b.book_id }}" {% if item.book_id == b.book_id %}selected{% endif %}>
+                                        {{ b.book_id }} - {{ b.title }} - {{ "{:,.0f}".format(b.price) }} VNĐ
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div>
+                                <label>Số lượng</label>
+                                <input class="form-control" type="number" name="quantity[]" min="1" value="{{ item.quantity | default(1) }}" required>
+                            </div>
+                            <div><button class="btn btn-danger" type="button" onclick="removeItem(this)">Xóa</button></div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    <button class="btn btn-info" type="button" onclick="addItem()"><i class="la la-plus"></i> Thêm sản phẩm</button>
+                </div>
+            </div>
 
-        <div class="actions" style="margin-top:14px">
-            <button class="btn blue" type="submit">Cập nhật đơn hàng</button>
-            <a class="btn gray" href="{{ url_for('order_detail', order_id=order.order_id) }}">Hủy</a>
-            <a class="btn dark" href="/orders">Về danh sách</a>
-        </div>
-    </form>
-</div>
+            <button class="btn btn-primary" type="submit"><i class="la la-save"></i> Cập nhật đơn hàng</button>
+            <a class="btn btn-secondary" href="{{ url_for('orders') }}">Hủy</a>
+        </form>
+    </div>
 </div>
 
 <template id="book-options-template">
     <option value="">-- Chọn sách --</option>
     {% for b in books %}
-    <option value="{{ b.book_id }}">
-        {{ b.book_id }} - {{ b.title }} - {{ "{:,.0f}".format(b.price) }} VNĐ
-    </option>
+    <option value="{{ b.book_id }}">{{ b.book_id }} - {{ b.title }} - {{ "{:,.0f}".format(b.price) }} VNĐ</option>
     {% endfor %}
 </template>
+{% endblock %}
 
+{% block scripts %}
 <script>
 function addItem() {
     const wrapper = document.getElementById("items-wrapper");
     const options = document.getElementById("book-options-template").innerHTML;
-
     const row = document.createElement("div");
     row.className = "item-row";
     row.innerHTML = `
-        <div>
-            <label>Sách</label>
-            <select name="book_id[]" required>${options}</select>
-        </div>
-        <div>
-            <label>Số lượng</label>
-            <input type="number" name="quantity[]" min="1" value="1" required>
-        </div>
-        <div>
-            <button class="btn red" type="button" onclick="removeItem(this)">Xóa</button>
-        </div>
-    `;
+        <div><label>Sách</label><select class="form-control" name="book_id[]" required>${options}</select></div>
+        <div><label>Số lượng</label><input class="form-control" type="number" name="quantity[]" min="1" value="1" required></div>
+        <div><button class="btn btn-danger" type="button" onclick="removeItem(this)">Xóa</button></div>`;
     wrapper.appendChild(row);
 }
-
 function removeItem(button) {
     const wrapper = document.getElementById("items-wrapper");
     if (wrapper.querySelectorAll(".item-row").length <= 1) {
@@ -143,5 +106,4 @@ function removeItem(button) {
     button.closest(".item-row").remove();
 }
 </script>
-</body>
-</html>
+{% endblock %}

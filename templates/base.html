@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
+    <title>{% block title %}Book Mining Admin{% endblock %}</title>
+    <meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0, shrink-to-fit=no" name="viewport" />
+
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Nunito:200,300,400,600,700,800,900">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/line-awesome@1.3.0/dist/line-awesome/css/line-awesome.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/ready_local.css') }}">
+
+    {% block head %}{% endblock %}
+</head>
+<body>
+<div class="wrapper">
+    <div class="main-header">
+        <div class="logo-header">
+            <a href="{{ url_for('home') }}" class="logo">
+                Book PT Store
+            </a>
+        </div>
+
+        <nav class="navbar navbar-header navbar-expand-lg">
+            <div class="container-fluid">
+                <form class="navbar-left navbar-form nav-search mr-md-3" action="{{ url_for('books') }}" method="GET">
+                    <div class="input-group">
+                        <input type="text" name="keyword" placeholder="Tìm sách, tác giả, review..." class="form-control">
+                        <div class="input-group-append">
+                            <button class="input-group-text" type="submit">
+                                <i class="la la-search search-icon"></i>
+                            </button>
+                        </div>
+                    </div>
+                </form>
+
+                <ul class="navbar-nav topbar-nav ml-md-auto align-items-center">
+                    <li class="nav-item d-none d-md-block">
+                        <a class="nav-link" href="{{ url_for('analytics') }}">
+                            <i class="la la-bar-chart"></i> Phân tích
+                        </a>
+                    </li>
+                    <li class="nav-item d-none d-md-block">
+                        <a class="nav-link" href="{{ url_for('customer_reviews') }}">
+                            <i class="la la-star"></i> Khách hàng đánh giá
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('add_order') }}">
+                            <i class="la la-plus-circle"></i> Tạo đơn
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </nav>
+    </div>
+
+    <div class="sidebar">
+        <div class="sidebar-wrapper">
+            <div class="user">
+                <div class="avatar">BM</div>
+                <div class="info">
+                    <span>Book PT Store</span>
+                    <span class="user-level">Data Mining Project</span>
+                </div>
+            </div>
+
+            <ul class="nav">
+                <li class="nav-item {% if request.endpoint == 'home' %}active{% endif %}">
+                    <a href="{{ url_for('home') }}">
+                        <i class="la la-dashboard"></i>
+                        <p>Tổng quan</p>
+                    </a>
+                </li>
+
+                <li class="nav-item {% if request.endpoint in ['books', 'book_detail', 'add_book', 'edit_book'] %}active{% endif %}">
+                    <a href="{{ url_for('books') }}">
+                        <i class="la la-book"></i>
+                        <p>Quản lý sách</p>
+                    </a>
+                </li>
+
+                <li class="nav-item {% if request.endpoint in ['customers', 'add_customer', 'edit_customer'] %}active{% endif %}">
+                    <a href="{{ url_for('customers') }}">
+                        <i class="la la-users"></i>
+                        <p>Khách hàng</p>
+                    </a>
+                </li>
+
+                <li class="nav-item {% if request.endpoint in ['orders', 'add_order', 'edit_order', 'order_detail'] %}active{% endif %}">
+                    <a href="{{ url_for('orders') }}">
+                        <i class="la la-shopping-cart"></i>
+                        <p>Đơn hàng</p>
+                    </a>
+                </li>
+
+                <li class="nav-item {% if request.endpoint == 'customer_orders' %}active{% endif %}">
+                    <a href="{{ url_for('customer_orders') }}">
+                        <i class="la la-link"></i>
+                        <p>Đơn hàng của khách</p>
+                    </a>
+                </li>
+
+                <li class="nav-item {% if request.endpoint in ['customer_reviews', 'sync_customer_reviews'] %}active{% endif %}">
+                    <a href="{{ url_for('customer_reviews') }}">
+                        <i class="la la-star"></i>
+                        <p>Đánh giá khách hàng</p>
+                    </a>
+                </li>
+
+                <li class="nav-item {% if request.endpoint in ['analytics', 'data_mining'] %}active{% endif %}">
+                    <a href="{{ url_for('analytics') }}">
+                        <i class="la la-line-chart"></i>
+                        <p>Khai phá dữ liệu</p>
+                    </a>
+                </li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="main-panel">
+        <div class="content">
+            <div class="container-fluid">
+                {% block content %}{% endblock %}
+            </div>
+        </div>
+
+        <footer class="footer">
+            <div class="container-fluid d-flex justify-content-between flex-wrap">
+                <span>Đồ án khai phá dữ liệu MongoDB</span>
+                <span>Ready Bootstrap Dashboard style</span>
+            </div>
+        </footer>
+    </div>
+</div>
+
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.1/dist/umd/popper.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/js/bootstrap.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+
+{% block scripts %}{% endblock %}
+</body>
+</html>

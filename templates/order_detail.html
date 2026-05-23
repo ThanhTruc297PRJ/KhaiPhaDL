@@ -1,66 +1,90 @@
-<!DOCTYPE html>
-<html lang="vi">
-<head>
-<meta charset="UTF-8">
-<title>Chi tiết đơn hàng</title>
-<style>*{box-sizing:border-box}body{margin:0;font-family:Arial,sans-serif;background:#f4f6f8;color:#111827}.container{width:92%;margin:24px auto}.nav{display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap}.nav a,.btn,a.btn{background:#16a34a;color:white;text-decoration:none;padding:9px 14px;border-radius:8px;font-weight:bold;border:none;cursor:pointer;font-size:14px}.nav .blue,.btn.blue{background:#2563eb}.nav .dark,.btn.dark{background:#111827}.nav .orange,.btn.orange{background:#f97316}.nav .gray,.btn.gray{background:#6b7280}.btn.red{background:#dc2626}h1{font-size:26px;color:#1f2937}.card{background:white;padding:16px;border-radius:12px;box-shadow:0 3px 12px rgba(0,0,0,.07);margin-bottom:16px}.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;align-items:end}.full{grid-column:1/3}label{display:block;font-weight:bold;font-size:13px;margin-bottom:6px;color:#374151}input,select,textarea{width:100%;padding:10px;border:1px solid #d1d5db;border-radius:8px;font-size:14px}textarea{min-height:90px}.error{background:#fee2e2;color:#b91c1c;padding:11px;border-radius:8px;font-weight:bold;margin-bottom:12px}.actions{display:flex;gap:8px;flex-wrap:wrap;align-items:center}.money{white-space:nowrap;text-align:right;font-weight:bold;color:#dc2626}.muted{color:#6b7280;font-size:13px}.item-row{display:grid;grid-template-columns:2fr 120px auto;gap:10px;align-items:end;margin-bottom:10px;padding:10px;border:1px solid #e5e7eb;border-radius:10px;background:#f9fafb}.item-title{font-weight:bold;margin-bottom:10px;color:#1f2937}.summary-box{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:10px}.summary-card{background:#f9fafb;border:1px solid #e5e7eb;border-radius:10px;padding:10px}.summary-card b{display:block;color:#15803d;font-size:18px}@media(max-width:900px){.container{width:96%}.form-grid,.item-row,.summary-box{grid-template-columns:1fr}.full{grid-column:1/2}}table{width:100%;border-collapse:collapse;background:white;font-size:13px}th{background:#16a34a;color:white;padding:10px;border:1px solid #e5e7eb}td{padding:9px;border:1px solid #e5e7eb;vertical-align:top}tr:nth-child(even){background:#f9fafb}</style>
-</head>
-<body>
-<div class="container">
-<div class="nav"><a href="/">Trang chủ</a><a class="blue" href="/books">Sách</a><a class="dark" href="/customers">Khách hàng</a><a class="orange" href="/orders">Đơn hàng</a><a class="dark" href="/customer-orders">Customer Orders</a><a class="blue" href="/analytics">Phân tích</a></div>
+{% extends "base.html" %}
+{% block title %}Chi tiết đơn hàng{% endblock %}
 
-<h1>Chi tiết đơn hàng: {{ order.order_id }}</h1>
+{% block content %}
+<h4 class="page-title">Chi tiết đơn hàng: {{ order.order_id }}</h4>
 
-<div class="card">
-    <div class="summary-box">
-        <div class="summary-card">
-            <b>{{ order.customer_name }}</b>
-            <span>{{ order.customer_phone }}</span>
-        </div>
-        <div class="summary-card">
-            <b>{{ order.status }}</b>
-            <span>Trạng thái</span>
-        </div>
-        <div class="summary-card">
-            <b>{{ "{:,.0f}".format(order.total_amount) }} VNĐ</b>
-            <span>Tổng tiền</span>
+<div class="row">
+    <div class="col-md-4">
+        <div class="card card-stats card-primary">
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-5"><div class="icon-big"><i class="la la-user"></i></div></div>
+                    <div class="col-7 d-flex align-items-center">
+                        <div class="numbers">
+                            <p class="card-category">Khách hàng</p>
+                            <h4 class="card-title">{{ order.customer_name }}</h4>
+                        </div>
+                    </div>
+                </div>
+                <small>{{ order.customer_phone }}</small>
+            </div>
         </div>
     </div>
 
-    <p style="margin-top:12px"><b>Ngày tạo:</b> {{ order.created_at }}</p>
-    <p><b>Ghi chú:</b> {{ order.note | default('') }}</p>
+    <div class="col-md-4">
+        <div class="card card-stats card-warning">
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-5"><div class="icon-big"><i class="la la-info-circle"></i></div></div>
+                    <div class="col-7 d-flex align-items-center">
+                        <div class="numbers">
+                            <p class="card-category">Trạng thái</p>
+                            <h4 class="card-title">{{ order.status }}</h4>
+                        </div>
+                    </div>
+                </div>
+                <small>{{ order.created_at }}</small>
+            </div>
+        </div>
+    </div>
 
-    <div class="actions" style="margin-top:14px">
-        <a class="btn blue" href="{{ url_for('edit_order', order_id=order.order_id) }}">Sửa đơn hàng</a>
-        <a class="btn gray" href="{{ url_for('orders') }}">Về danh sách đơn hàng</a>
+    <div class="col-md-4">
+        <div class="card card-stats card-danger">
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-5"><div class="icon-big"><i class="la la-money"></i></div></div>
+                    <div class="col-7 d-flex align-items-center">
+                        <div class="numbers">
+                            <p class="card-category">Tổng tiền</p>
+                            <h4 class="card-title">{{ "{:,.0f}".format(order.total_amount) }}</h4>
+                        </div>
+                    </div>
+                </div>
+                <small>VNĐ</small>
+            </div>
+        </div>
     </div>
 </div>
 
 <div class="card">
-    <h2>Danh sách sản phẩm</h2>
-    <table>
-        <thead>
-        <tr>
-            <th>Mã sách</th>
-            <th>Tên sách</th>
-            <th>Đơn giá</th>
-            <th>Số lượng</th>
-            <th>Thành tiền</th>
-        </tr>
-        </thead>
-        <tbody>
-        {% for item in order.get("items", []) %}
-        <tr>
-            <td>{{ item.book_id }}</td>
-            <td>{{ item.title }}</td>
-            <td class="money">{{ "{:,.0f}".format(item.price) }} VNĐ</td>
-            <td>{{ item.quantity }}</td>
-            <td class="money">{{ "{:,.0f}".format(item.amount) }} VNĐ</td>
-        </tr>
-        {% endfor %}
-        </tbody>
-    </table>
+    <div class="card-header d-flex justify-content-between align-items-center flex-wrap">
+        <div>
+            <div class="card-title">Sản phẩm trong đơn</div>
+            <p class="card-category">{{ order.note | default('') }}</p>
+        </div>
+        <div>
+            <a class="btn btn-primary" href="{{ url_for('edit_order', order_id=order.order_id) }}"><i class="la la-edit"></i> Sửa đơn hàng</a>
+            <a class="btn btn-secondary" href="{{ url_for('orders') }}">Về danh sách</a>
+        </div>
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead><tr><th>Mã sách</th><th>Tên sách</th><th>Đơn giá</th><th>Số lượng</th><th>Thành tiền</th></tr></thead>
+                <tbody>
+                {% for item in order.get("items", []) %}
+                <tr>
+                    <td><b>{{ item.book_id }}</b></td>
+                    <td>{{ item.title }}</td>
+                    <td class="money">{{ "{:,.0f}".format(item.price) }} VNĐ</td>
+                    <td>{{ item.quantity }}</td>
+                    <td class="money">{{ "{:,.0f}".format(item.amount) }} VNĐ</td>
+                </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
 </div>
-</div>
-</body>
-</html>
+{% endblock %}

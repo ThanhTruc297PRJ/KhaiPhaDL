@@ -1,0 +1,253 @@
+{% extends "base.html" %}
+{% block title %}Customer Reviews{% endblock %}
+
+{% block content %}
+<h4 class="page-title">Đánh giá khách hàng</h4>
+
+<div class="row">
+    <div class="col-md-3">
+        <div class="card card-stats card-primary">
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-5"><div class="icon-big"><i class="la la-star"></i></div></div>
+                    <div class="col-7 d-flex align-items-center">
+                        <div class="numbers">
+                            <p class="card-category">Review</p>
+                            <h4 class="card-title">{{ total_all_customer_reviews }}</h4>
+                        </div>
+                    </div>
+                </div>
+                <small>Tổng đánh giá đã đồng bộ</small>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-3">
+        <div class="card card-stats card-success">
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-5"><div class="icon-big"><i class="la la-users"></i></div></div>
+                    <div class="col-7 d-flex align-items-center">
+                        <div class="numbers">
+                            <p class="card-category">Người đánh giá</p>
+                            <h4 class="card-title">{{ reviewer_count }}</h4>
+                        </div>
+                    </div>
+                </div>
+                <small>Người đánh giá cũng là khách hàng</small>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-3">
+        <div class="card card-stats card-warning">
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-5"><div class="icon-big"><i class="la la-database"></i></div></div>
+                    <div class="col-7 d-flex align-items-center">
+                        <div class="numbers">
+                            <p class="card-category">Đã lọc</p>
+                            <h4 class="card-title">{{ total_customer_reviews }}</h4>
+                        </div>
+                    </div>
+                </div>
+                <small>Kết quả sau lọc</small>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-3">
+        <div class="card card-stats card-danger">
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-5"><div class="icon-big"><i class="la la-refresh"></i></div></div>
+                    <div class="col-7 d-flex align-items-center">
+                        <div class="numbers">
+                            <p class="card-category">Đồng bộ</p>
+                            <h4 class="card-title">Sách</h4>
+                        </div>
+                    </div>
+                </div>
+                <a href="{{ url_for('sync_customer_reviews') }}">Đồng bộ từ books.reviews</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center flex-wrap">
+        <div>
+            <div class="card-title">Bảng đánh giá khách hàng</div>
+            <p class="card-category">
+                Collection này giúp nối reviewer trong books.reviews với customers để phân tích hành vi đánh giá.
+            </p>
+        </div>
+        <a class="btn btn-info" href="{{ url_for('sync_customer_reviews') }}">
+            <i class="la la-refresh"></i> Đồng bộ đánh giá khách hàng
+        </a>
+    </div>
+
+    <div class="card-body">
+        <form class="row" method="GET" action="{{ url_for('customer_reviews') }}">
+            <div class="col-md-4 mb-2">
+                <label>Từ khóa</label>
+                <input class="form-control" name="keyword" value="{{ keyword }}"
+                       placeholder="Mã KH, tên khách, sách, bình luận...">
+            </div>
+
+            <div class="col-md-2 mb-2">
+                <label>Cảm xúc</label>
+                <select class="form-control" name="sentiment">
+                    <option value="">Tất cả</option>
+                    {% for item in sentiments %}
+                    <option value="{{ item }}" {% if selected_sentiment == item %}selected{% endif %}>{{ item }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="col-md-2 mb-2">
+                <label>Đánh giá</label>
+                <select class="form-control" name="rating">
+                    <option value="">Tất cả</option>
+                    {% for r in [5,4,3,2,1] %}
+                    <option value="{{ r }}" {% if selected_rating == r|string %}selected{% endif %}>{{ r }} sao</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="col-md-2 mb-2">
+                <label>Số dòng/trang</label>
+                <select class="form-control" name="per_page">
+                    {% for size in allowed_per_pages %}
+                    <option value="{{ size }}" {% if per_page == size %}selected{% endif %}>{{ size }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="col-md-2 mb-2 d-flex align-items-end">
+                <button class="btn btn-success mr-2" type="submit"><i class="la la-search"></i></button>
+                <a class="btn btn-secondary" href="{{ url_for('customer_reviews') }}">Khôi phục</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header"><div class="card-title">Phân bố cảm xúc đánh giá</div></div>
+            <div class="card-body"><canvas id="customerReviewSentimentChart"></canvas></div>
+        </div>
+    </div>
+
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header"><div class="card-title">Phân bố rating đánh giá</div></div>
+            <div class="card-body"><canvas id="customerReviewRatingChart"></canvas></div>
+        </div>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header">
+        <div class="card-title">Dữ liệu khách hàng đánh giá</div>
+        <p class="card-category">Hiển thị {{ start_index }} - {{ end_index }} / {{ total_customer_reviews }} review</p>
+    </div>
+
+    <div class="card-body">
+        {% if customer_reviews %}
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                <tr>
+                    <th>Mã review</th>
+                    <th>Khách hàng</th>
+                    <th>Sách</th>
+                    <th>Đánh giá</th>
+                    <th>Cảm xúc</th>
+                    <th>Bình luận</th>
+                    <th>Ngày đánh giá</th>
+                </tr>
+                </thead>
+                <tbody>
+                {% for item in customer_reviews %}
+                <tr>
+                    <td><b>{{ item.customer_review_id }}</b><br><small>{{ item.review_id }}</small></td>
+                    <td>
+                        <b>{{ item.customer_name }}</b><br>
+                        <small>{{ item.customer_id }}</small><br>
+                        <small>{{ item.customer_phone }}</small>
+                    </td>
+                    <td>
+                        <a href="{{ url_for('book_detail', book_id=item.book_id) }}"><b>{{ item.book_title }}</b></a><br>
+                        <small>{{ item.book_id }} - {{ item.book_category }}</small>
+                    </td>
+                    <td><span class="badge badge-warning">{{ item.rating }} ★</span></td>
+                    <td><span class="badge badge-info">{{ item.sentiment }}</span></td>
+                    <td>{{ item.comment }}</td>
+                    <td>{{ item.review_date }}</td>
+                </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <nav>
+            <ul class="pagination justify-content-end">
+                {% if page > 1 %}
+                <li class="page-item">
+                    <a class="page-link"
+                       href="{{ url_for('customer_reviews', keyword=keyword, sentiment=selected_sentiment, rating=selected_rating, per_page=per_page, page=page-1) }}">
+                        Trước
+                    </a>
+                </li>
+                {% endif %}
+
+                {% for p in range(1, total_pages + 1) %}
+                    {% if p == page %}
+                    <li class="page-item active"><span class="page-link">{{ p }}</span></li>
+                    {% elif p >= page - 2 and p <= page + 2 %}
+                    <li class="page-item">
+                        <a class="page-link"
+                           href="{{ url_for('customer_reviews', keyword=keyword, sentiment=selected_sentiment, rating=selected_rating, per_page=per_page, page=p) }}">
+                            {{ p }}
+                        </a>
+                    </li>
+                    {% endif %}
+                {% endfor %}
+
+                {% if page < total_pages %}
+                <li class="page-item">
+                    <a class="page-link"
+                       href="{{ url_for('customer_reviews', keyword=keyword, sentiment=selected_sentiment, rating=selected_rating, per_page=per_page, page=page+1) }}">
+                        Sau
+                    </a>
+                </li>
+                {% endif %}
+            </ul>
+        </nav>
+        {% else %}
+        <div class="alert alert-warning">
+            Chưa có dữ liệu customer_reviews. Bấm “Đồng bộ Customer Reviews” để tạo từ books.reviews.
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function makeChart(id, type, labels, values, label) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    new Chart(el, {
+        type: type,
+        data: { labels: labels, datasets: [{ label: label, data: values }] },
+        options: { responsive: true, plugins: { legend: { display: type === 'pie' || type === 'doughnut' } } }
+    });
+}
+
+makeChart("customerReviewSentimentChart", "doughnut", {{ sentiment_labels|tojson }}, {{ sentiment_values|tojson }}, "Review");
+makeChart("customerReviewRatingChart", "bar", {{ rating_labels|tojson }}, {{ rating_values|tojson }}, "Rating");
+</script>
+{% endblock %}
