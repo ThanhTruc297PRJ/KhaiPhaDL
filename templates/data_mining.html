@@ -516,8 +516,8 @@ function makeChart(id, type, labels, values, label) {
 }
 
 makeChart("categoryChart", "bar", {{ category_labels|tojson }}, {{ category_values|tojson }}, "Số sách");
-makeChart("sentimentChart", "doughnut", {{ sentiment_labels|tojson }}, {{ sentiment_values|tojson }}, "Book Reviews");
-makeChart("customerReviewSentimentChart", "doughnut", {{ customer_review_sentiment_labels|tojson }}, {{ customer_review_sentiment_values|tojson }}, "Customer Reviews");
+makeChart("sentimentChart", "doughnut", {{ sentiment_labels|tojson }}, {{ sentiment_values|tojson }}, "Đánh giá Sách");
+makeChart("customerReviewSentimentChart", "doughnut", {{ customer_review_sentiment_labels|tojson }}, {{ customer_review_sentiment_values|tojson }}, "Đánh giá khách hàng");
 makeChart("customerReviewRatingChart", "bar", {{ customer_review_rating_labels|tojson }}, {{ customer_review_rating_values|tojson }}, "Rating");
 makeChart("authorChart", "bar", {{ author_labels[:12]|tojson }}, {{ author_values[:12]|tojson }}, "Số sách");
 makeChart("topReviewChart", "bar", {{ top_review_book_labels|tojson }}, {{ top_review_book_values|tojson }}, "Review");
